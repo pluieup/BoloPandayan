@@ -1,27 +1,44 @@
+import { useEffect, useState } from 'react'
+import { supabase } from './supabaseClient'
 import ProjectCard from './ProjectCard'
 
-const collectionData = [
-    { id: 'pinuti', name: 'Pinuti', image: '/assets/pinuti.jpg' },
-    { id: 'barong', name: 'Barong', image: '/assets/barong.jpg' },
-    { id: 'garab', name: 'Garab', image: '/assets/garab.jpg' },
-    { id: 'batangas', name: 'Batangas', image: '/assets/batangas.jpg' }
-]
-
 export default function CollectionGallery() {
+  const [products, setProducts] = useState([])
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      const { data, error } = await supabase
+        .from('tbl_products')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (!error) setProducts(data)
+    }
+
+    fetchProducts()
+  }, [])
+
+  // Only show the gallery if there are actual products
+  if (products.length === 0) {
     return (
-        <section className="bg-[#D17B57] py-20 px-6 sm:px-12">
-            <div className="max-w-6xl mx-auto">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {collectionData.map((item) => (
-                        <ProjectCard 
-                            key={item.id} 
-                            id={item.id} 
-                            name={item.name} 
-                            image={item.image} 
-                        />
-                    ))}
-                </div>
-            </div>
-        </section>
+      <section className="py-20 bg-[#FDF8F5] text-center">
+        <p className="text-gray-400 font-serif italic">The digital collection is currently being curated...</p>
+      </section>
     )
+  }
+
+  return (
+    <section id="collection" className="bg-[#D17B57] py-20 px-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+        {products.map((item) => (
+          <ProjectCard 
+            key={item.id}
+            id={item.id}
+            name={item.name}
+            image={item.image_url} 
+          />
+        ))}
+      </div>
+    </section>
+  )
 }
