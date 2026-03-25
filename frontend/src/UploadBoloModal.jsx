@@ -63,7 +63,7 @@ export default function UploadBoloModal({ isOpen, onClose, artisanId, onUploadSu
         price: parseFloat(price) || 0,
         description,
         image_url: imageUrl,
-        artisan_id: artisanId
+        workshop_id: artisanId
       }
 
       if (editingProduct) {

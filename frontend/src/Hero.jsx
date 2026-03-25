@@ -1,36 +1,45 @@
-import backgroundImage from '/assets/Background.png' // Import it at the top
+import backgroundImage from '/assets/Background.png'
 
 export default function Hero() {
   return (
     <section 
-      className="relative min-h-screen flex items-center justify-center bg-gray-900 bg-cover bg-center overflow-hidden"
-      // CHANGE THIS PATH HERE:
+      className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-cover bg-center"
       style={{ backgroundImage: `url(${backgroundImage})` }}
     >
-      {/* 1. Dark Overlay to make the text "BOLO PANDAYAN" pop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-brightness-75"></div>
+      {/* 1. Improved Overlay: Stronger at the bottom for the StatsBar transition */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"></div>
 
-      {/* 2. Content */}
-      <div className="relative z-10 text-center px-6">
-        <span className="text-[#D17B57] font-black text-xs md:text-sm tracking-[0.4em] uppercase mb-4 block animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* 2. Content: Added max-w and responsive margins */}
+      <div className="relative z-10 text-center px-6 max-w-5xl mx-auto">
+        <span className="text-[#D17B57] font-black text-[10px] md:text-sm tracking-[0.3em] md:tracking-[0.5em] uppercase mb-4 block animate-in fade-in slide-in-from-bottom-4 duration-700">
           Loay Heritage Information System
         </span>
-        <h1 className="text-6xl md:text-7xl font-black text-[#FDF8F5] font-serif tracking-tighter leading-none mb-6 drop-shadow-2xl">
-          BOLO <br className="md:hidden" /> PANDAYAN
-        </h1>
-        <p className="mx-auto text-[#EAE0D5] text-sm md:text-lg font-medium leading-relaxed opacity-80 mb-10">
-          A digital sanctuary for Loay's traditional blacksmiths. We document the iron legacy of Bohol, showcase their masterworks, and safeguard their workshops against disaster risks. This project bridges ancient craftsmanship with modern resilience.
-        </p>
         
+        {/* Responsive Text: Huge on desktop, scaled perfectly for mobile */}
+        <div className = "relative z-10 text-center px-6 md:px-20 max-w-6xl mx-auto">
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-black text-[#FDF8F5] font-serif tracking-tighter leading-[0.9] mb-6 drop-shadow-2xl uppercase">
+            Bolo <br className="md:hidden" /> Pandayan
+          </h1>
+        
+          <p className="mx-auto text-[#EAE0D5] text-xs md:text-lg font-medium leading-relaxed opacity-90 mb-10 max-w-2xl px-2">
+            A digital sanctuary for Loay's traditional blacksmiths. We document the iron legacy of Bohol, showcase their masterworks, and safeguard their workshops against disaster risks. 
+            <span className="hidden md:inline"> This project bridges ancient craftsmanship with modern resilience.</span>
+          </p>
+          
+        </div>
+
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <a href="#collection" className="px-10 py-4 bg-[#D17B57] text-white font-black text-xs tracking-[0.2em] rounded-full hover:bg-[#A65B3D] transition-all shadow-xl uppercase">
+          <a 
+            href="#collection" 
+            className="w-full sm:w-auto px-10 py-4 bg-[#D17B57] text-white font-black text-[10px] md:text-xs tracking-[0.2em] rounded-full hover:bg-[#A65B3D] hover:scale-105 active:scale-95 transition-all shadow-2xl uppercase"
+          >
             Explore Collection
           </a>
         </div>
       </div>
 
-      {/* 3. Subtle Bottom Gradient for smooth transition to StatsBar */}
-      <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-[#0A0A0A] to-transparent"></div>
+      {/* 3. Deep Gradient: Ensures the transition to the dark StatsBar is seamless */}
+      <div className="absolute bottom-0 left-0 w-full h-48 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/80 to-transparent"></div>
     </section>
   )
 }

@@ -21,18 +21,30 @@ export default function ArtisanDashboard() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return navigate('/')
 
-    const { data: profileData } = await supabase
+        const { data: profileRows, error: profileError } = await supabase
       .from('tbl_user_profiles')
       .select('*')
       .eq('id', user.id)
-      .single()
+            .limit(1)
 
-    if (profileData) setProfile(profileData)
+        if (profileError) {
+            await supabase.auth.signOut()
+            return navigate('/')
+        }
+
+        const profileData = profileRows?.[0] ?? null
+
+        if (!profileData) {
+            await supabase.auth.signOut()
+            return navigate('/')
+        }
+
+        setProfile(profileData)
 
     const { data: productData } = await supabase
       .from('tbl_products')
       .select('*')
-      .eq('artisan_id', user.id)
+      .eq('workshop_id', user.id)
       .order('created_at', { ascending: false })
 
     if (productData) setMyProducts(productData)
@@ -116,14 +128,30 @@ export default function ArtisanDashboard() {
                 <h3 className="text-3xl font-black text-[#4A3224] font-serif uppercase mb-2">Heritage Collection</h3>
                 <p className="text-xs text-gray-500 font-medium tracking-widest uppercase">Document and manage your masterworks</p>
             </div>
-            <button
-                onClick={() => setIsUploadOpen(true)}
-                className="px-8 py-4 bg-[#D17B57] text-white rounded-2xl text-xs font-black tracking-widest hover:bg-[#4A3224] transition-all shadow-lg hover:-translate-y-1 active:scale-95 flex items-center gap-2"
-            >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
-                UPLOAD MASTERWORK
-            </button>
-        </div>
+            {profile?.is_approved ? (
+                <button
+                    onClick={() => setIsUploadOpen(true)}
+                    className="px-8 py-4 bg-[#D17B57] text-white rounded-2xl text-xs font-black tracking-widest hover:bg-[#4A3224] transition-all shadow-lg hover:-translate-y-1 active:scale-95 flex items-center gap-2"
+                >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+                    UPLOAD MASTERWORK
+                </button>
+            ) : (
+                <div className="group relative flex flex-col items-center">
+                    <button
+                        disabled
+                        className="px-8 py-4 bg-[#EAE0D5] text-gray-400 rounded-2xl text-xs font-black tracking-widest uppercase cursor-not-allowed border border-gray-300 flex items-center gap-2 shadow-sm"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+                        UPLOAD MASTERWORK
+                    </button>
+                    {/* Dark Tooltip */}
+                    <span className="absolute -top-12 scale-0 transition-all rounded-lg bg-[#4A3224] p-3 text-[10px] font-black tracking-widest text-[#FDF8F5] group-hover:scale-100 uppercase shadow-xl w-max z-50">
+                        Awaiting LGU Verification
+                    </span>
+                </div>
+            )}
+                    </div>
 
         {myProducts.length === 0 ? (
             <div className="bg-white border-2 border-dashed border-[#EAE0D5] rounded-[3rem] py-32 text-center animate-in fade-in duration-700">

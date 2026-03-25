@@ -9,6 +9,24 @@ export default function Login() {
   const [errorMsg, setErrorMsg] = useState('')
   const [loading, setLoading] = useState(false)
 
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    if (!email) {
+      setErrorMsg("Please enter your email address first.");
+      return;
+    }
+    
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'http://localhost:5173/update-password',
+    });
+
+    if (error) {
+      setErrorMsg(error.message);
+    } else {
+      alert("Check your email for the password reset link!");
+    }
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault()
     setLoading(true)
@@ -28,26 +46,33 @@ export default function Login() {
         .from('tbl_user_profiles')
         .select('account_status, role')
         .eq('id', authData.user.id)
-        .single()
+        .limit(1)
 
       if (profileError) throw profileError
+      const profileRow = profile?.[0] ?? null
+
+      if (!profileRow) {
+        await supabase.auth.signOut()
+        setErrorMsg('Account exists but profile setup is incomplete. Please register again or contact support.')
+        return
+      }
 
       // 3. The Gatekeeper Check
-      if (profile.account_status === 'pending') {
+      if (profileRow.account_status === 'pending') {
         await supabase.auth.signOut()
         setErrorMsg('Your account is still pending LGU approval.')
         return
       }
 
-      if (profile.account_status === 'rejected') {
+      if (profileRow.account_status === 'rejected') {
         await supabase.auth.signOut()
         setErrorMsg('Your application was not approved.')
         return
       }
 
       // 4. Success Routing
-      if (profile.role === 'admin') {
-        navigate('/admin-dashboard')
+      if (profileRow.role === 'admin') {
+        navigate('/lgu-dashboard')
       } else {
         navigate('/artisan-dashboard')
       }
@@ -95,18 +120,29 @@ export default function Login() {
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-[#EAE0D5] tracking-widest mb-1 uppercase">Password</label>
-            <input 
-              required
-              type="password" 
-              value={password} // Wired up to state
-              onChange={(e) => setPassword(e.target.value)} // Wired up to state
-              className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-[#E8A88B] transition-colors"
-              placeholder="••••••••"
-            />
-          </div>
-
+            {/* Standard Password Field */}
+            <div>
+              <label className="block text-xs font-bold text-[#EAE0D5] tracking-widest mb-1 uppercase">Password</label>
+              <input 
+                required
+                type="password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-[#E8A88B] transition-colors"
+                placeholder="••••••••"
+              />
+              
+              {/* The "Forgot Password" Trigger */}
+              <div className="text-right mt-2">
+                <button 
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="text-[10px] font-bold text-[#E8A88B] hover:underline uppercase tracking-widest transition-all"
+                >
+                  Forgot Password?
+                </button>
+              </div>
+            </div>
           <button 
             type="submit" // Changed to submit so handleLogin works
             disabled={loading}

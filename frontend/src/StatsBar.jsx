@@ -13,42 +13,48 @@ export default function StatsBar() {
   const domRef = useRef()
 
   useEffect(() => {
-    // 1. Fetch Real-Time Data from Supabase
     const fetchStats = async () => {
-      // Count Total Registered Pandays (Artisans)
-      const { count: pandayCount } = await supabase
-        .from('tbl_user_profiles')
-        .select('*', { count: 'exact', head: true })
-        .eq('role', 'artisan')
+    // 1. Count ONLY approved artisans for "Registered Pandays"
+    const { count: artisanCount } = await supabase
+      .from('tbl_user_profiles')
+      .select('*', { count: 'exact', head: true })
+      .eq('role', 'artisan')
+      .eq('is_approved', true);
 
-      // Count Unique Active Workshops (from approved artisans)
-      const { data: workshopData } = await supabase
-        .from('tbl_user_profiles')
-        .select('shop_name')
-        .eq('account_status', 'approved')
-      
-      const uniqueWorkshops = new Set(workshopData?.map(w => w.shop_name)).size
+    // 2. Count Unique Active Workshops (Only for Approved Artisans)
+    // We filter by 'artisan' role and ensure shop_name is not null
+    const { data: workshopData } = await supabase
+      .from('tbl_user_profiles')
+      .select('shop_name')
+      .eq('role', 'artisan')
+      .eq('is_approved', true)
+      .not('shop_name', 'is', null);
+  
+    const uniqueWorkshops = new Set(workshopData?.map(w => w.shop_name)).size;
 
-      // Count Total Heritage Items (Products)
-      const { count: itemCount } = await supabase
-        .from('tbl_products')
-        .select('*', { count: 'exact', head: true })
+    // 3. Count Total Heritage Items (Products)
+    const { count: itemCount } = await supabase
+      .from('tbl_products')
+      .select('*', { count: 'exact', head: true });
 
-      // Calculate % of Workshops Assessed (Approved / Total)
-      const { count: approvedCount } = await supabase
-        .from('tbl_user_profiles')
-        .select('*', { count: 'exact', head: true })
-        .eq('account_status', 'approved')
+    // 4. Calculate % of Workshops Assessed
+    // Logic: (Approved Artisans / Total Artisan Registrations)
+    const { count: totalArtisans } = await supabase
+      .from('tbl_user_profiles')
+      .select('*', { count: 'exact', head: true })
+      .eq('role', 'artisan');
 
-      const percentage = pandayCount > 0 ? Math.round((approvedCount / pandayCount) * 100) : 0
+    const percentage = totalArtisans > 0 
+      ? Math.round(((artisanCount || 0) / totalArtisans) * 100) 
+      : 0;
 
-      setStats({
-        pandays: pandayCount || 0,
-        workshops: uniqueWorkshops || 0,
-        items: itemCount || 0,
-        assessed: percentage
-      })
-    }
+    setStats({
+      pandays: artisanCount || 0,
+      workshops: uniqueWorkshops || 0,
+      items: itemCount || 0,
+      assessed: percentage
+    });
+  }
 
     fetchStats()
 

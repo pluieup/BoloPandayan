@@ -2,12 +2,21 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from './supabaseClient'
 
+
 export default function LoginModal({ isOpen, onClose }) {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
   const [loading, setLoading] = useState(false)
+
+  const getFriendlyAuthError = (error) => {
+    const message = (error?.message || '').toLowerCase()
+    if (message.includes('email rate limit exceeded')) {
+      return 'Too many email requests were sent. Please wait a minute, then try again.'
+    }
+    return error?.message || 'Something went wrong. Please try again.'
+  }
 
   if (!isOpen) return null // Don't render if not open
 
@@ -24,25 +33,54 @@ export default function LoginModal({ isOpen, onClose }) {
         .from('tbl_user_profiles')
         .select('account_status, role')
         .eq('id', authData.user.id)
-        .single()
+        .limit(1)
 
       if (profileError) throw profileError
+      const profileRow = profile?.[0] ?? null
 
-      if (profile.account_status === 'pending') {
+      if (!profileRow) {
         await supabase.auth.signOut()
-        setErrorMsg('Your account is still pending LGU approval.')
+        setErrorMsg('Account exists but profile setup is incomplete. Please register again or contact support.')
         return
       }
 
+      if (profileRow.account_status !== 'approved') {
+        await supabase.auth.signOut()
+        setErrorMsg('Your account is not yet active.')
+        return
+      }
       // Success Routing
-      navigate(profile.role === 'admin' ? '/admin-dashboard' : '/artisan-dashboard')
+      navigate(profileRow.role === 'admin' ? '/lgu-dashboard' : '/artisan-dashboard')
       onClose() // Close modal on success
     } catch (error) {
-      setErrorMsg(error.message)
+      setErrorMsg(getFriendlyAuthError(error))
     } finally {
       setLoading(false)
     }
   }
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault()
+    setErrorMsg('')
+
+    if (!email) {
+      setErrorMsg('Enter your email first, then click Forgot Password.')
+      return
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/update-password`,
+    })
+
+    if (error) {
+      setErrorMsg(getFriendlyAuthError(error))
+      return
+    }
+
+    setErrorMsg('Password reset link sent. Check your email inbox.')
+  }
+
+  
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -87,18 +125,29 @@ export default function LoginModal({ isOpen, onClose }) {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          <button 
-            type="submit"
-            disabled={loading}
-            className="w-full bg-[#4A3224] text-white py-3.5 rounded-xl font-bold text-xs tracking-widest hover:bg-[#D17B57] transition-all disabled:opacity-50"
-          >
-            {loading ? 'VERIFYING...' : 'LOGIN'}
-          </button>
+
+          <div className="text-right">
+            <button
+              type="button"
+              onClick={handleForgotPassword}
+              className="text-[10px] font-black text-[#D17B57] hover:underline uppercase tracking-widest transition-all"
+            >
+              Forgot Password?
+            </button>
+          </div>
+
+        <button 
+          type="submit"
+          disabled={loading}
+          className="w-full bg-[#4A3224] text-white py-3.5 rounded-xl font-bold text-xs tracking-widest hover:bg-[#D17B57] transition-all disabled:opacity-50 mt-2"
+        >
+          {loading ? 'VERIFYING...' : 'LOGIN'}
+        </button>
         </form>
 
         <div className="mt-6 flex flex-col gap-3 text-center">
             <Link to="/register" onClick={onClose} className="text-xs text-[#D17B57] font-bold hover:underline">
-                Register as an Artisan
+                Register a new account
             </Link>
             <button 
                 onClick={onClose} 
