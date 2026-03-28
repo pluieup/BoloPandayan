@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { supabase } from './supabaseClient'
+import { supabase } from '../supabaseClient'
 
 export default function WorkshopPublicPage() {
   const { workshopId } = useParams()
@@ -157,10 +157,21 @@ export default function WorkshopPublicPage() {
 
           {/* Admin Button - Floating on the right side on desktop for a cleaner look */}
           {(userRole === 'admin' || userRole === 'developer') && (
-            <div className="mt-10 lg:absolute lg:top-0 lg:right-[-200px] lg:mt-0">
+            <div className="mt-10 flex flex-col gap-3 lg:absolute lg:top-0 lg:right-[-220px] lg:mt-0">
+               
+               {/* 1. The New Risk Profile Button */}
+               <Link
+                to={`/admin/workshops/${workshop.id}/risk-profile`}
+                className="inline-flex items-center justify-start gap-3 py-3 px-6 bg-white border border-[#EAE0D5] text-[#1A2E35] rounded-xl text-[9px] font-black tracking-widest uppercase hover:border-[#D17B57] hover:text-[#D17B57] transition-all shadow-sm"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+                Risk Profile Map
+              </Link>
+
+               {/* 2. The Existing Disaster Records Button */}
                <Link
                 to={`/admin/workshops/${workshop.id}/damage-reports`}
-                className="inline-flex items-center justify-center gap-2 py-3 px-6 bg-[#1A1A1A] border border-white/10 text-white rounded-xl text-[9px] font-black tracking-widest uppercase hover:bg-[#D17B57] hover:border-[#D17B57] transition-all shadow-xl"
+                className="inline-flex items-center justify-start gap-3 py-3 px-6 bg-[#1A1A1A] border border-white/10 text-white rounded-xl text-[9px] font-black tracking-widest uppercase hover:bg-[#D17B57] hover:border-[#D17B57] transition-all shadow-xl"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 Disaster Records

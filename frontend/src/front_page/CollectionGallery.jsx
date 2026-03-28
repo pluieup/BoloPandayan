@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { supabase } from './supabaseClient'
-import ProjectCard from './ProjectCard'
+import { supabase } from '../supabaseClient'
+import ProjectCard from '../components/ProjectCard'
 
 export default function CollectionGallery() {
   const [products, setProducts] = useState([])

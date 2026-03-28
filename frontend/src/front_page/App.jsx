@@ -1,20 +1,21 @@
 import { useState, useEffect } from 'react' // Add useEffect
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { supabase } from './supabaseClient' // Import your supabase client
-import StatsBar from './StatsBar'
+import { supabase } from '../supabaseClient' // Import your supabase client
+import StatsBar from '../components/StatsBar'
 import Navbar from './NavBar'
 import Hero from './Hero'
 import WorkshopList from './WorkShopList'
 import CollectionGallery from './CollectionGallery'
-import Register from './Register'
-import LoginModal from './LoginModal'
-import ArtisanDashboard from './ArtisanDashboard'
+import Register from '../components/Register'
+import LoginModal from '../components/LoginModal'
+import ArtisanDashboard from '../artisan/ArtisanDashboard'
 import ProtectedRoute from './ProtectedRoute'
-import LGUAdminDashboard from './LGUAdminDashboard'
-import UpdatePassword from './UpdatePassword' // Create this file next!
-import WorkshopPublicPage from './WorkshopPublicPage'
+import LGUAdminDashboard from '../lgu/LGUAdminDashboard'
+import UpdatePassword from '../components/UpdatePassword' // Create this file next!
+import WorkshopPublicPage from '../artisan/WorkshopPublicPage'
 import CollectionItemPage from './CollectionItemPage'
-import DamageReports from './DamageReports'
+import DamageReports from '../drrm/DamageReports'
+import RiskProfile from '../drrm/RiskProfile'
 
 function Home({ onLoginOpen }) {
   return (
@@ -76,6 +77,7 @@ function App() {
         <Route path="/update-password" element={<UpdatePassword />} />
         <Route path="/workshops/:workshopId" element={<WorkshopPublicPage />} />
         <Route path="/collection/:productId" element={<CollectionItemPage />} />
+        <Route path="/risk-profile/:workshopId" element={<RiskProfile />} />
         <Route
           path="/admin/workshops/:workshopId/damage-reports"
           element={

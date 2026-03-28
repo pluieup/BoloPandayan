@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { supabase } from './supabaseClient'
+import { supabase } from '../supabaseClient'
 import { useNavigate, Link } from 'react-router-dom'
-import UploadBoloModal from './UploadBoloModal'
-import ProductCard from './artisan/ProductCard'
-import EditProfileModal from './artisan/EditProfileModal'
-import JoinWorkshopView from './artisan/JoinWorkshopView'
+import UploadBoloModal from '../components/UploadBoloModal'
+import ProductCard from './ProductCard'
+import EditProfileModal from './EditProfileModal'
+import JoinWorkshopView from './JoinWorkshopView'
 
 export default function ArtisanDashboard() {
   const navigate = useNavigate()

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { supabase } from './supabaseClient'
+import { supabase } from '../supabaseClient'
 
 export default function Navbar({ onLoginClick }) {
   const [user, setUser] = useState(null)

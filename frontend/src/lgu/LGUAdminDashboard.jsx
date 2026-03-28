@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from './supabaseClient';
-import ConfirmationModal from './lgu/ConfirmationModal';
-import ArtisanDirectoryTable from './lgu/ArtisanDirectoryTable';
+import { supabase } from '../supabaseClient';
+import ConfirmationModal from './ConfirmationModal';
+import ArtisanDirectoryTable from './ArtisanDirectoryTable';
 
 
 const LGUAdminDashboard = () => {

@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { supabase } from './supabaseClient'
+import { supabase } from '../supabaseClient'
 
 export default function DamageReports() {
   const { workshopId } = useParams()
