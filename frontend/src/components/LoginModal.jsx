@@ -126,9 +126,10 @@ export default function LoginModal({ isOpen, onClose }) {
             <button 
               type="button"
               onClick={onClose} 
-              className="text-[9px] text-[#8B5E3C]/60 font-bold hover:text-[#4A3224] transition-colors flex items-center justify-center uppercase tracking-widest"
+              className="inline-flex items-center justify-center gap-3 px-5 py-2.5 rounded-full bg-white/10 backdrop-blur-md text-white border border-white/20 text-[10px] font-black tracking-widest uppercase hover:bg-white/20 transition-all"
             >
-              <span className="mr-2">←</span> Back to Home
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+              Return
             </button>
           </div>        
         </form>

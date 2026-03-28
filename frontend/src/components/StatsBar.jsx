@@ -89,7 +89,7 @@ export default function StatsBar() {
           <span className="text-5xl md:text-7xl font-black text-white font-serif leading-none">
             {stats.pandays}
           </span>
-          <div className="text-[10px] font-black text-gray-400 tracking-[0.25em] leading-tight uppercase">
+          <div className="text-[9px] font-black text-gray-500 tracking-[0.3em] leading-relaxed uppercase">
             Registered<br/>Pandays
           </div>
         </div>
@@ -101,7 +101,7 @@ export default function StatsBar() {
           <span className="text-5xl md:text-7xl font-black text-white font-serif leading-none">
             {stats.workshops}
           </span>
-          <div className="text-[10px] font-black text-gray-400 tracking-[0.25em] leading-tight uppercase">
+          <div className="text-[9px] font-black text-gray-500 tracking-[0.3em] leading-relaxed uppercase">
             Active<br/>Workshops
           </div>
         </div>
@@ -113,7 +113,7 @@ export default function StatsBar() {
           <span className="text-5xl md:text-7xl font-black text-white font-serif leading-none">
             {stats.items}
           </span>
-          <div className="text-[10px] font-black text-gray-400 tracking-[0.25em] leading-tight uppercase">
+          <div className="text-[9px] font-black text-gray-500 tracking-[0.3em] leading-relaxed uppercase">
             Heritage<br/>Items
           </div>
         </div>
@@ -125,7 +125,7 @@ export default function StatsBar() {
           <span className="text-5xl md:text-7xl font-black text-[#D17B57] font-serif leading-none">
             {stats.assessed}%
           </span>
-          <div className="text-[10px] font-black text-gray-400 tracking-[0.25em] leading-tight uppercase">
+          <div className="text-[9px] font-black text-gray-500 tracking-[0.3em] leading-relaxed uppercase">
             Workshops<br/>Assessed
           </div>
         </div>

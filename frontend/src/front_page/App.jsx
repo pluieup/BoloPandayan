@@ -16,6 +16,15 @@ const WorkshopPublicPage = lazy(() => import('../artisan/WorkshopPublicPage'))
 const CollectionItemPage = lazy(() => import('./CollectionItemPage'))
 const DamageReports = lazy(() => import('../drrm/DamageReports'))
 const RiskProfile = lazy(() => import('../drrm/RiskProfile'))
+const RiskAssessmentRecords = lazy(() => import('../drrm/RiskAssessmentRecords'))
+
+function LoadingScreen() {
+  return (
+    <div className="h-screen flex items-center justify-center bg-[#0A0A0A] text-[#FDF8F5]">
+      <p className="action-label loading-pulse text-[11px]">Loading Bolo Pandayan...</p>
+    </div>
+  )
+}
 
 function Home({ onLoginOpen }) {
   return (
@@ -67,11 +76,11 @@ function App() {
     setLoading(false)
   }
 
-  if (loading) return <div className="h-screen flex items-center justify-center">Loading Bolo Pandayan...</div>
+  if (loading) return <LoadingScreen />
 
   return (
-    <main className="min-h-screen bg-[#FDF8F5]">
-      <Suspense fallback={<div className="h-screen flex items-center justify-center">Loading page...</div>}>
+    <main className="min-h-screen selection:bg-[#D17B57] selection:text-white">
+      <Suspense fallback={<LoadingScreen />}>
         <Routes>
           <Route path="/" element={<Home onLoginOpen={() => setIsLoginOpen(true)} />} />
           <Route path="/register" element={<Register />} />
@@ -79,6 +88,8 @@ function App() {
           <Route path="/workshops/:workshopId" element={<WorkshopPublicPage />} />
           <Route path="/collection/:productId" element={<CollectionItemPage />} />
           <Route path="/risk-profile/:workshopId" element={<RiskProfile />} />
+          <Route path="/workshops/:workshopId/risk-assessments" element={<RiskAssessmentRecords />} />
+          <Route path="/workshops/:workshopId/damage-reports" element={<DamageReports />} />
           <Route
             path="/admin/workshops/:workshopId/risk-profile"
             element={

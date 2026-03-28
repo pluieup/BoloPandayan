@@ -51,8 +51,9 @@ export default function CollectionItemPage() {
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#0A0A0A] text-center p-8">
         <h2 className="text-3xl font-black text-white uppercase mb-3">Item Not Found</h2>
         <p className="text-gray-400 text-sm mb-8">This collection item may have been removed.</p>
-        <Link to="/" className="px-6 py-3 bg-[#D17B57] text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#b06445] transition-colors">
-          Back to Home
+        <Link to="/" className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-black/40 backdrop-blur-md text-[#FDF8F5] border border-white/10 text-[10px] font-black tracking-widest uppercase hover:bg-black/60 transition-all">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+          Return
         </Link>
       </div>
     )
@@ -61,9 +62,9 @@ export default function CollectionItemPage() {
   return (
     <div className="min-h-screen bg-[#FDF8F5]">
       <main className="max-w-6xl mx-auto px-6 md:px-12 py-12">
-        <Link to="/#collection" className="inline-flex items-center gap-2 text-[10px] font-black tracking-widest uppercase text-[#4A3224] hover:text-[#D17B57] mb-8">
+        <Link to="/#collection" className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-[#FDF8F5] border border-[#D17B57]/20 text-[#4A3224] text-[10px] font-black tracking-widest uppercase hover:bg-[#D17B57] hover:text-white hover:scale-[1.02] transition-all mb-8 shadow-sm">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
-          Back to Collection
+          Back
         </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 bg-white border border-[#EAE0D5] rounded-3xl p-6 md:p-10 shadow-sm">

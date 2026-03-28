@@ -7,6 +7,7 @@ export default function DamageReports() {
   const [reports, setReports] = useState([])
   const [loading, setLoading] = useState(true)
   const [workshopName, setWorkshopName] = useState('Loading...')
+  const [userRole, setUserRole] = useState(null)
   
   // Track the current logged-in admin
   const [currentUserId, setCurrentUserId] = useState(null)
@@ -23,14 +24,30 @@ export default function DamageReports() {
   })
 
   useEffect(() => {
-    // Get the current user ID when the component mounts
     const getCurrentUser = async () => {
       const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) setCurrentUserId(session.user.id)
+      const sessionUserId = session?.user?.id || null
+      setCurrentUserId(sessionUserId)
+
+      if (!sessionUserId) {
+        setUserRole(null)
+        return
+      }
+
+      const { data: roleData } = await supabase
+        .from('tbl_user_profiles')
+        .select('role')
+        .eq('id', sessionUserId)
+        .maybeSingle()
+
+      setUserRole(roleData?.role || null)
     }
+
     getCurrentUser()
     fetchData()
   }, [workshopId])
+
+  const isEditable = userRole === 'admin' || userRole === 'developer'
 
   const fetchData = async () => {
     setLoading(true)
@@ -44,10 +61,9 @@ export default function DamageReports() {
       
     if (workshop) setWorkshopName(workshop.name)
 
-    // Get Reports AND the admin's name who last edited it
     const { data: reportData } = await supabase
       .from('tbl_damage_reports')
-      .select('*, tbl_user_profiles!last_edited_by(full_name)')
+      .select('*')
       .eq('workshop_id', workshopId)
       .order('incident_date', { ascending: false })
 
@@ -60,6 +76,7 @@ export default function DamageReports() {
   }, [reports])
 
   const openModal = (report = null) => {
+    if (!isEditable) return
     if (report) {
       setEditingId(report.id)
       setFormData({
@@ -84,6 +101,7 @@ export default function DamageReports() {
 
   const handleSave = async (e) => {
     e.preventDefault()
+    if (!isEditable) return
     
     const payload = {
       workshop_id: workshopId,
@@ -107,6 +125,7 @@ export default function DamageReports() {
   }
 
   const handleDelete = async () => {
+    if (!isEditable) return
     const confirmed = window.confirm("Are you sure you want to delete this damage report? This action cannot be undone.")
     if (!confirmed) return
 
@@ -144,12 +163,16 @@ export default function DamageReports() {
       <div className="max-w-6xl mx-auto p-8 py-12">
         <div className="flex justify-between items-center mb-10 border-b border-[#EAE0D5] pb-6">
           <h2 className="text-2xl font-black text-[#1A2E35] font-serif uppercase tracking-widest">Incident Log</h2>
-          <button 
-            onClick={() => openModal()}
-            className="bg-[#D17B57] text-white px-6 py-3 rounded-xl text-[10px] font-black tracking-widest uppercase hover:bg-[#b06445] transition-all shadow-lg"
-          >
-            + File New Report
-          </button>
+          {isEditable ? (
+            <button 
+              onClick={() => openModal()}
+              className="bg-[#D17B57] text-white px-6 py-3 rounded-xl text-[10px] font-black tracking-widest uppercase hover:bg-[#b06445] transition-all shadow-lg"
+            >
+              + File New Report
+            </button>
+          ) : (
+            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Public Read-Only View</span>
+          )}
         </div>
 
         {loading ? (
@@ -167,8 +190,8 @@ export default function DamageReports() {
             {reports.map((report) => (
               <div 
                 key={report.id} 
-                onClick={() => openModal(report)}
-                className="bg-white border border-[#EAE0D5] rounded-2xl p-8 shadow-sm hover:shadow-xl hover:border-[#D17B57]/30 transition-all cursor-pointer group flex flex-col md:flex-row gap-8"
+                onClick={isEditable ? () => openModal(report) : undefined}
+                className={`bg-white border border-[#EAE0D5] rounded-2xl p-8 shadow-sm transition-all group flex flex-col md:flex-row gap-8 ${isEditable ? 'hover:shadow-xl hover:border-[#D17B57]/30 cursor-pointer' : ''}`}
               >
                 {/* Left Column */}
                 <div className="md:w-1/4 border-b md:border-b-0 md:border-r border-[#EAE0D5] pb-6 md:pb-0 md:pr-6">
@@ -200,7 +223,6 @@ export default function DamageReports() {
                      <div className="mt-6 pt-4 border-t border-gray-100 flex items-center gap-2 text-[9px] text-gray-400 font-bold uppercase tracking-widest">
                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                        Last edited: {new Date(report.updated_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })} 
-                       {report.tbl_user_profiles?.full_name ? ` by ${report.tbl_user_profiles.full_name}` : ''}
                      </div>
                    ) : (
                      <div className="mt-6 pt-4 border-t border-gray-100 flex items-center gap-2 text-[9px] text-gray-300 font-bold uppercase tracking-widest">
@@ -217,9 +239,11 @@ export default function DamageReports() {
                       <p className="text-2xl font-black text-[#D17B57]">PHP {report.estimated_cost?.toLocaleString() || '0'}</p>
                     </div>
                     
-                    <div className="mt-6 opacity-0 group-hover:opacity-100 transition-opacity flex justify-end">
-                       <span className="text-[9px] font-black text-[#D17B57] uppercase tracking-widest bg-[#FDF8F5] px-3 py-1.5 rounded-md border border-[#EAE0D5]">Edit Record →</span>
-                    </div>
+                    {isEditable && (
+                      <div className="mt-6 opacity-0 group-hover:opacity-100 transition-opacity flex justify-end">
+                         <span className="text-[9px] font-black text-[#D17B57] uppercase tracking-widest bg-[#FDF8F5] px-3 py-1.5 rounded-md border border-[#EAE0D5]">Edit Record →</span>
+                      </div>
+                    )}
                 </div>
               </div>
             ))}
@@ -228,7 +252,7 @@ export default function DamageReports() {
       </div>
 
       {/* Editor Modal (Now with Max-Height and Scrolling) */}
-      {isModalOpen && (
+      {isModalOpen && isEditable && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           {/* Main Modal Container: added max-h-[90vh] and flex-col */}
           <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-[#EAE0D5] flex flex-col max-h-[90vh]">

@@ -1,6 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { MapContainer, TileLayer, Marker } from 'react-leaflet'
+import 'leaflet/dist/leaflet.css'
+import L from 'leaflet'
 import { supabase } from '../supabaseClient'
+
+delete L.Icon.Default.prototype._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+})
 
 export default function WorkshopPublicPage() {
   const { workshopId } = useParams()
@@ -9,6 +19,7 @@ export default function WorkshopPublicPage() {
   const [artisans, setArtisans] = useState([])
   const [products, setProducts] = useState([])
   const [userRole, setUserRole] = useState(null)
+  const [latestRiskRecord, setLatestRiskRecord] = useState(null)
 
   useEffect(() => {
     const fetchWorkshopPage = async () => {
@@ -31,7 +42,7 @@ export default function WorkshopPublicPage() {
 
       const { data: workshopData, error: workshopError } = await supabase
         .from('tbl_workshops')
-        .select('id, name, address, banner_url, owner_id, created_at')
+        .select('id, name, address, banner_url, owner_id, created_at, safety_score, lat, lng')
         .eq('id', workshopId)
         .maybeSingle()
 
@@ -41,6 +52,15 @@ export default function WorkshopPublicPage() {
       }
 
       setWorkshop(workshopData)
+
+      const { data: latestRiskData } = await supabase
+        .from('tbl_workshop_risk_assessments')
+        .select('id, assessed_at, risk_score, risk_label')
+        .eq('workshop_id', workshopId)
+        .order('assessed_at', { ascending: false })
+        .limit(1)
+
+      setLatestRiskRecord((latestRiskData && latestRiskData[0]) || null)
 
       const { data: artisanData, error: artisanError } = await supabase
         .from('tbl_user_profiles')
@@ -97,6 +117,29 @@ export default function WorkshopPublicPage() {
     return primaryArtisan?.banner_url || workshop?.banner_url || '/assets/Background.png'
   }, [primaryArtisan, workshop])
 
+  const riskScore = useMemo(() => {
+    if (latestRiskRecord?.risk_score !== null && latestRiskRecord?.risk_score !== undefined) {
+      return Math.round(Number(latestRiskRecord.risk_score || 0))
+    }
+    return Math.round(Number(workshop?.safety_score || 0))
+  }, [latestRiskRecord, workshop])
+
+  const riskLabel = useMemo(() => {
+    if (latestRiskRecord?.risk_label) return latestRiskRecord.risk_label
+    if (riskScore >= 60) return 'High'
+    if (riskScore >= 30) return 'Moderate'
+    return 'Low'
+  }, [latestRiskRecord, riskScore])
+
+  const riskAssessedDate = useMemo(() => {
+    if (!latestRiskRecord?.assessed_at) return null
+    return new Date(latestRiskRecord.assessed_at).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    })
+  }, [latestRiskRecord])
+
 
   if (loading) {
     return (
@@ -111,8 +154,9 @@ export default function WorkshopPublicPage() {
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#121212] text-center p-8">
         <h2 className="text-3xl font-black text-white uppercase mb-3">Workshop Not Found</h2>
         <p className="text-gray-400 text-sm mb-8">This workshop may have been removed or is still awaiting approval.</p>
-        <Link to="/" className="px-8 py-4 bg-[#D17B57] text-white rounded-full text-[10px] font-black uppercase tracking-[0.2em] hover:bg-[#b06445] transition-all">
-          Back to Home
+        <Link to="/" className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-black/40 backdrop-blur-md text-[#FDF8F5] border border-white/10 text-[10px] font-black tracking-widest uppercase hover:bg-black/60 transition-all">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+          Return
         </Link>
       </div>
     )
@@ -142,7 +186,7 @@ export default function WorkshopPublicPage() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-8 md:px-16 py-16">
+      <main className="max-w-7xl mx-auto px-8 md:px-16 py-16 reveal-up">
         
         <section className="mb-20 max-w-4xl relative">
           <div className="flex items-center gap-4 mb-8">
@@ -153,24 +197,62 @@ export default function WorkshopPublicPage() {
             {description}
           </p>
 
-          {/* Admin Buttons - Now styled correctly inline with the content block */}
-          {(userRole === 'admin' || userRole === 'developer') && (
-            <div className="mt-12 pt-8 border-t border-[#D17B57]/20 flex flex-col sm:flex-row gap-4">
-               <Link
-                to={`/admin/workshops/${workshop.id}/risk-profile`}
-                className="flex-1 inline-flex items-center justify-center gap-3 py-4 px-6 bg-white border border-[#D17B57]/30 text-[#D17B57] rounded-xl text-[10px] font-black tracking-widest uppercase hover:bg-[#D17B57] hover:text-white transition-all shadow-sm"
+          <div className="mt-8 inline-flex items-center gap-4 pandayan-curve border border-[#EAD6CA] bg-white px-6 py-5 shadow-sm">
+            <div>
+              <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">Workshop Risk Profile</p>
+              <p className="text-2xl font-black text-[#D17B57]">{riskScore}%</p>
+              {riskAssessedDate && (
+                <p className="text-[10px] text-gray-500 mt-1">Latest assessed: {riskAssessedDate}</p>
+              )}
+            </div>
+            <div className="h-10 w-px bg-[#EAD6CA]"></div>
+            <p className="action-label text-[10px] text-[#1A1A1A]">{riskLabel} Risk</p>
+          </div>
+
+          <div className="mt-12 pt-8 border-t border-[#D17B57]/20 flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              {(userRole === 'admin' || userRole === 'developer') && (
+                <Link
+                  to={`/risk-profile/${workshop.id}`}
+                  className="action-label flex-1 inline-flex items-center justify-center gap-3 py-4 px-6 bg-white border border-[#D17B57]/30 text-[#D17B57] rounded-full text-[10px] hover:bg-[#D17B57] hover:text-white hover:scale-[1.02] transition-all shadow-sm"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+                  Risk Profile Map
+                </Link>
+              )}
+
+              <Link
+                to={`/workshops/${workshop.id}/risk-assessments`}
+                className="action-label flex-1 inline-flex items-center justify-center gap-3 py-4 px-6 bg-white border border-[#4A3224]/20 text-[#4A3224] rounded-full text-[10px] hover:bg-[#4A3224] hover:text-white hover:scale-[1.02] transition-all shadow-sm"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
-                Risk Profile Map
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                Assessment Records
               </Link>
 
-               <Link
-                to={`/admin/workshops/${workshop.id}/damage-reports`}
-                className="flex-1 inline-flex items-center justify-center gap-3 py-4 px-6 bg-[#1A1A1A] border border-[#1A1A1A] text-white rounded-xl text-[10px] font-black tracking-widest uppercase hover:bg-[#D17B57] hover:border-[#D17B57] transition-all shadow-xl"
+              <Link
+                to={`/workshops/${workshop.id}/damage-reports`}
+                className="action-label flex-1 inline-flex items-center justify-center gap-3 py-4 px-6 bg-[#1A1A1A] border border-[#1A1A1A] text-white rounded-full text-[10px] hover:bg-[#D17B57] hover:border-[#D17B57] hover:scale-[1.02] transition-all shadow-xl"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 Disaster Records
               </Link>
+            </div>
+
+          </div>
+
+          {(workshop?.lat && workshop?.lng) && (
+            <div className="mt-12 rounded-2xl overflow-hidden shadow-lg border border-[#EAD6CA] h-96">
+              <MapContainer
+                center={[parseFloat(workshop.lat), parseFloat(workshop.lng)]}
+                zoom={14}
+                style={{ height: '100%', width: '100%' }}
+              >
+                <TileLayer
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution='&copy; OpenStreetMap contributors'
+                />
+                <Marker position={[parseFloat(workshop.lat), parseFloat(workshop.lng)]} />
+              </MapContainer>
             </div>
           )}
         </section>

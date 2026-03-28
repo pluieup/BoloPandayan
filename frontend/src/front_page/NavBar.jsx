@@ -60,38 +60,32 @@ export default function Navbar({ onLoginClick }) {
   }
   
   return (
-    <nav className="fixed top-0 w-full z-[100] bg-white/80 backdrop-blur-md border-b border-white/20 px-6 md:px-12 py-4 flex justify-between items-center transition-all duration-300 shadow-sm">
-      {/* Brand Logo */}
-      <div className="flex items-center gap-4 group cursor-pointer" onClick={() => navigate('/')}>
+    <nav className="forge-glass fixed top-0 w-full z-[100] px-6 md:px-12 py-4 flex justify-between items-center transition-all duration-300">
+        <div className="flex items-center gap-4 group cursor-pointer" onClick={() => navigate('/')}>
+          <img 
+            src="/assets/BoloFinal.png" 
+            alt="Logo" 
+            className="w-9 h-9 object-contain group-hover:rotate-12 transition-transform duration-500"
+          />
+          <h1 className="forge-heading text-lg md:text-2xl text-[#4A3224]">
+            Bolo Pandayan
+          </h1>
+        </div>
         
-        <img 
-          src="/assets/BoloFinal.png" 
-          alt="Bolo Pandayan Logo" 
-          className="w-9 h-9 md:w-10 md:h-10 object-contain group-hover:scale-105 transition-transform"
-        />
-
-        <h1 className="text-lg md:text-2xl font-black tracking-[0.1em] md:tracking-[0.2em] text-[#4A3224] font-serif uppercase">
-          Bolo Pandayan
-        </h1>
-        
-      </div>      
-      {/* Desktop Navigation */}
-      <div className="hidden md:flex items-center gap-10 font-bold text-xs tracking-[0.15em] text-[#6B5041]">
-        <Link to="/" className="hover:text-[#D17B57] transition-colors">HOME</Link>
-        <a href="#collection" className="hover:text-[#D17B57] transition-colors">COLLECTION</a>
-        
-        {user && profile ? (
-          <div className="flex items-center gap-6">
-            <span className="font-bold text-xs tracking-[0.15em] text-[#D17B57] uppercase">
-              HELLO, {profile.full_name?.split(' ')[0] || 'User'}
-            </span>
-            <button onClick={handleDashboardRedirect} className="flex items-center gap-2 px-5 py-2.5 bg-[#4A3224] text-[#FDF8F5] rounded-xl hover:bg-[#D17B57] transition-all shadow-md">
-              <span className="font-bold text-[10px] tracking-[0.2em] uppercase">Dashboard</span>
-            </button>
-          </div>
-        ) : (
-          <button onClick={onLoginClick} className="px-4 py-2 bg-[#F5EBE1] rounded-lg hover:bg-[#EAE0D5] text-[#4A3224] font-bold text-xs tracking-[0.15em] transition-all uppercase">LOGIN</button>
-        )}
+          {/* Desktop Navigation */}
+      <div className="hidden md:flex items-center gap-10 action-label text-[10px] text-[#4A3224]/70">
+        <Link to="/" className="hover:text-[#D17B57] transition-all hover:scale-105 uppercase">Home</Link>
+        <a href="#collection" className="hover:text-[#D17B57] transition-all hover:scale-105 uppercase">Collection</a>
+            
+            {user && profile ? (
+              <button onClick={handleDashboardRedirect} className="action-label px-6 py-3 bg-[#4A3224] text-[#FDF8F5] rounded-full hover:bg-[#D17B57] transition-all shadow-lg hover:scale-105 active:scale-100">
+                DASHBOARD
+              </button>
+            ) : (
+              <button onClick={onLoginClick} className="action-label px-6 py-3 border border-[#4A3224]/30 rounded-full hover:bg-[#4A3224] hover:text-white transition-all hover:scale-105">
+                LOGIN
+              </button>
+            )}
       </div>
 
       {/* Mobile Menu Toggle Button */}
@@ -105,20 +99,20 @@ export default function Navbar({ onLoginClick }) {
 
       {/* Mobile Menu Overlay */}
       {isMenuOpen && (
-        <div className="absolute top-[73px] left-0 w-full bg-white border-b border-gray-100 shadow-xl flex flex-col p-6 gap-6 md:hidden animate-in slide-in-from-top duration-300">
-          <Link to="/" onClick={() => setIsMenuOpen(false)} className="font-black text-xs tracking-widest text-[#6B5041] uppercase">HOME</Link>
-          <a href="#collection" onClick={() => setIsMenuOpen(false)} className="font-black text-xs tracking-widest text-[#6B5041] uppercase">COLLECTION</a>
+        <div className="absolute top-[73px] left-0 w-full bg-white/95 backdrop-blur-md border-b border-[#4A3224]/10 shadow-xl flex flex-col p-6 gap-6 md:hidden reveal-up">
+          <Link to="/" onClick={() => setIsMenuOpen(false)} className="action-label text-xs text-[#6B5041] uppercase">HOME</Link>
+          <a href="#collection" onClick={() => setIsMenuOpen(false)} className="action-label text-xs text-[#6B5041] uppercase">COLLECTION</a>
           
           <hr className="border-gray-100" />
 
           {user && profile ? (
             <div className="flex flex-col gap-4">
               <span className="font-bold text-xs tracking-[0.15em] text-[#D17B57] uppercase">HELLO, {profile.full_name}</span>
-              <button onClick={handleDashboardRedirect} className="w-full py-4 bg-[#4A3224] text-white rounded-xl font-black text-xs tracking-widest uppercase">My Dashboard</button>
-              <button onClick={handleLogout} className="w-full py-4 border border-red-100 text-red-600 rounded-xl font-black text-xs tracking-widest uppercase">Logout</button>
+              <button onClick={handleDashboardRedirect} className="w-full py-4 bg-[#4A3224] text-white rounded-full action-label text-xs uppercase hover:scale-[1.02] transition-all">My Dashboard</button>
+              <button onClick={handleLogout} className="w-full py-4 border border-red-100 text-red-600 rounded-full action-label text-xs uppercase hover:scale-[1.02] transition-all">Logout</button>
             </div>
           ) : (
-            <button onClick={() => { setIsMenuOpen(false); onLoginClick(); }} className="w-full py-4 bg-[#F5EBE1] text-[#4A3224] rounded-xl font-black text-xs tracking-widest uppercase">LOGIN</button>
+            <button onClick={() => { setIsMenuOpen(false); onLoginClick(); }} className="w-full py-4 bg-[#F5EBE1] text-[#4A3224] rounded-full action-label text-xs uppercase hover:scale-[1.02] transition-all">LOGIN</button>
           )}
         </div>
       )}
