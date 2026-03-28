@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from './supabaseClient'
 
@@ -11,51 +11,14 @@ export default function Register() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [idFile, setIdFile] = useState(null)
-
-  // Workshop Selection State
-  const [workshops, setWorkshops] = useState([])
-  const [selectedWorkshopId, setSelectedWorkshopId] = useState('')
-  const [isCreatingNewWorkshop, setIsCreatingNewWorkshop] = useState(false)
-  const [shopName, setShopName] = useState('')
-  const [shopAddress, setShopAddress] = useState('')
+  
+  // NEW: Password Toggle State
+  const [showPassword, setShowPassword] = useState(false)
 
   // Feedback State
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
-
-  const getFriendlyAuthError = (error) => {
-    const message = (error?.message || '').toLowerCase()
-    if (message.includes('email rate limit exceeded')) {
-      return 'Too many email requests were sent. Please wait a minute, then try again.'
-    }
-    if (message.includes('cannot coerce the result to a single json object')) {
-      return 'A data lookup returned an unexpected number of rows. Please try again or choose a different workshop option.'
-    }
-    if (message.includes('duplicate key value violates unique constraint "unique_owner"')) {
-      return 'This account already has a workshop record. Your shop details were reused.'
-    }
-    return error?.message || 'Something went wrong. Please try again.'
-  }
-
-  const isAlreadyRegisteredError = (error) => {
-    const message = (error?.message || '').toLowerCase()
-    return message.includes('user already registered') || message.includes('already registered')
-  }
-
-  // Fetch existing workshops on component mount
-  useEffect(() => {
-    const fetchWorkshops = async () => {
-      const { data, error } = await supabase
-        .from('tbl_workshops')
-        .select('id, name, address')
-        .order('name', { ascending: true })
-      
-      if (data) setWorkshops(data)
-      if (error) console.error("Error fetching workshops:", error.message)
-    }
-    fetchWorkshops()
-  }, [])
 
   const handleRegister = async (e) => {
     e.preventDefault()
@@ -64,45 +27,21 @@ export default function Register() {
     setSuccessMsg('')
 
     try {
-      // 1. Validation for Artisan
-      if (role === 'artisan' && !isCreatingNewWorkshop && !selectedWorkshopId) {
-        throw new Error("Please select an existing workshop or register a new one.")
-      }
-
-      // 2. Sign up with Supabase Auth
+      // 1. Sign up with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
       })
 
-      let userId = null
-
-      if (authError && !isAlreadyRegisteredError(authError)) {
-        throw authError
+      if (authError) throw authError
+      if (authData.user && authData.user.identities?.length === 0) {
+        throw new Error("This email is already registered.")
       }
 
-      if (authError || authData?.user?.identities?.length === 0) {
-        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        })
-
-        if (signInError) {
-          throw new Error('This email is already registered. Use the original password to continue registration, or reset your password first.')
-        }
-
-        userId = signInData?.user?.id ?? null
-      } else {
-        userId = authData?.user?.id ?? null
-      }
-
-      if (!userId) {
-        throw new Error('Unable to determine account ID. Please try again.')
-      }
-
+      const userId = authData.user.id
       let idUrl = null
 
-      // 3. Upload ID Image (Artisan only)
+      // 2. Upload ID Image (Artisan only)
       if (role === 'artisan' && idFile) {
         const fileExt = idFile.name.split('.').pop()
         const fileName = `${userId}_${Date.now()}.${fileExt}`
@@ -120,79 +59,35 @@ export default function Register() {
         idUrl = publicUrlData.publicUrl
       }
 
-      // 4. Workshop Logic: resolve final shop data
-      let finalShopName = null
-      let finalShopAddress = null
-
-      if (role === 'artisan' && isCreatingNewWorkshop) {
-        const { error: wsError } = await supabase
-          .from('tbl_workshops')
-          .upsert([
-            {
-              owner_id: userId,
-              name: shopName,
-              address: shopAddress,
-            },
-          ], { onConflict: 'owner_id' })
-
-        if (wsError) throw wsError
-        finalShopName = shopName
-        finalShopAddress = shopAddress
-      }
-
-      if (role === 'artisan' && !isCreatingNewWorkshop) {
-        const selectedWorkshop = workshops.find((w) => String(w.id) === String(selectedWorkshopId))
-        if (!selectedWorkshop) {
-          throw new Error('Selected workshop not found. Please pick a valid workshop.')
-        }
-        finalShopName = selectedWorkshop.name
-        finalShopAddress = selectedWorkshop.address ?? null
-      }
-
-      // 5. Create the Master Profile
-      const { data: existingProfiles, error: existingProfileError } = await supabase
-        .from('tbl_user_profiles')
-        .select('account_status, is_approved')
-        .eq('id', userId)
-        .limit(1)
-
-      if (existingProfileError) throw existingProfileError
-      const existingProfile = existingProfiles?.[0] ?? null
-
-      const nextAccountStatus = existingProfile?.account_status === 'approved'
-        ? 'approved'
-        : (role === 'admin' ? 'approved' : 'pending')
-
-      const nextIsApproved = existingProfile?.is_approved === true || role === 'admin'
-
+      // 3. Create the Master Profile (Simplified!)
       const { error: profileError } = await supabase
         .from('tbl_user_profiles')
-        .upsert([
+        .insert([
           {
-            id: userId,
-            full_name: fullName,
-            role: role,
-            account_status: nextAccountStatus,
-            is_approved: nextIsApproved,
-            valid_id_url: idUrl,
-            shop_name: role === 'artisan' ? finalShopName : null,
-            shop_address: role === 'artisan' ? finalShopAddress : null
-          }
-        ], { onConflict: 'id' })
+          id: userId,
+          full_name: fullName,
+          role: role,
+          account_status: role === 'admin' ? 'approved' : 'pending',
+          is_approved: role === 'admin',
+          workshop_id: null,
+          valid_id_url: idUrl,
+          shop_name: null,
+          shop_address: null          
+              }
+        ])
 
       if (profileError) throw profileError
 
-      // Sign out after registration to prevent auto-login before approval
+      // Sign out after registration to prevent auto-login
       await supabase.auth.signOut()
 
-      setSuccessMsg("Registration successful! Please check your email for verification. LGU approval is required before you can log in.")
+      setSuccessMsg("Registration successful! You can now log in to access your dashboard.")
       
       // Reset form
       setFullName(''); setEmail(''); setPassword(''); setIdFile(null);
-      setShopName(''); setShopAddress(''); setSelectedWorkshopId('');
 
     } catch (error) {
-      setErrorMsg(getFriendlyAuthError(error))
+      setErrorMsg(error.message)
     } finally {
       setLoading(false)
     }
@@ -204,7 +99,7 @@ export default function Register() {
 
       <div className="relative z-10 w-full max-w-[480px] bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 shadow-2xl">
         <div className="text-center mb-6">
-          <h2 className="text-3xl font-black text-[#FDF8F5] font-serif tracking-widest uppercase">PORTAL</h2>
+          <h2 className="text-3xl font-black text-[#FDF8F5] font-serif tracking-widest uppercase">Join the Portal</h2>
           <p className="text-[#EAE0D5] text-[10px] tracking-widest uppercase mt-2">Create your heritage account</p>
         </div>
 
@@ -220,39 +115,41 @@ export default function Register() {
         <form className="space-y-4" onSubmit={handleRegister}>
           <input required type="text" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Full Name" className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#E8A88B]" />
 
+          {/* Artisan ID Upload (Simplified layout) */}
           {role === 'artisan' && (
-            <div className="space-y-4 bg-black/10 p-4 rounded-2xl border border-white/5">
-              <div className="flex justify-between items-center px-1">
-                <label className="text-[10px] font-bold text-[#EAE0D5] tracking-widest uppercase">Workshop / Pandayan</label>
-                <button type="button" onClick={() => setIsCreatingNewWorkshop(!isCreatingNewWorkshop)} className="text-[9px] font-black text-[#E8A88B] hover:underline uppercase">
-                  {isCreatingNewWorkshop ? "Join Existing" : "Register New Shop"}
-                </button>
-              </div>
-
-              {!isCreatingNewWorkshop ? (
-                <select required value={selectedWorkshopId} onChange={e => setSelectedWorkshopId(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#E8A88B]">
-                  <option value="" className="bg-[#1A1A1A]">-- Select Workshop --</option>
-                  {workshops.map(ws => <option key={ws.id} value={ws.id} className="bg-[#1A1A1A]">{ws.name}</option>)}
-                </select>
-              ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  <input required type="text" placeholder="Shop Name" value={shopName} onChange={e => setShopName(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2.5 text-xs text-white focus:outline-none" />
-                  <input required type="text" placeholder="Address" value={shopAddress} onChange={e => setShopAddress(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2.5 text-xs text-white focus:outline-none" />
-                </div>
-              )}
-
-              <div className="mt-2">
-                <label className="block text-[9px] font-bold text-[#EAE0D5] tracking-widest mb-1 uppercase">Valid ID (Artisan Verification)</label>
-                <input required type="file" accept="image/*" onChange={e => setIdFile(e.target.files[0])} className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-[10px] text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-[9px] file:font-black file:bg-[#4A3224] file:text-white" />
-              </div>
+            <div className="bg-black/10 p-4 rounded-2xl border border-white/5">
+              <label className="block text-[9px] font-bold text-[#EAE0D5] tracking-widest mb-2 uppercase">Valid ID (Artisan Verification)</label>
+              <input required type="file" accept="image/*" onChange={e => setIdFile(e.target.files[0])} className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-[10px] text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-[9px] file:font-black file:bg-[#4A3224] file:text-white" />
             </div>
           )}
 
-          <input required type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email Address" className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none" />
-          <input required type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none" />
+          <input required type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email Address" className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#E8A88B]" />
+          
+          {/* NEW: Password Input with Toggle */}
+          <div className="relative">
+            <input 
+              required 
+              type={showPassword ? "text" : "password"} 
+              value={password} 
+              onChange={e => setPassword(e.target.value)} 
+              placeholder="Password" 
+              className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#E8A88B] pr-12" 
+            />
+            <button 
+              type="button" 
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-[#E8A88B] transition-colors"
+            >
+              {showPassword ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path></svg>
+              )}
+            </button>
+          </div>
 
           <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-[#FDF8F5] to-[#EAE0D5] text-[#4A3224] py-4 rounded-xl font-black text-[10px] tracking-widest hover:scale-[1.01] transition-all mt-4 disabled:opacity-50 uppercase shadow-lg">
-            {loading ? 'PROCESSING...' : (role === 'artisan' ? 'SUBMIT FOR APPROVAL' : 'CREATE ADMIN ACCOUNT')}
+            {loading ? 'PROCESSING...' : (role === 'artisan' ? 'REGISTER ACCOUNT' : 'CREATE ADMIN ACCOUNT')}
           </button>
         </form>
 

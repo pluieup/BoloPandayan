@@ -1,10 +1,24 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from './supabaseClient';
+import ConfirmationModal from './lgu/ConfirmationModal';
+import ArtisanDirectoryTable from './lgu/ArtisanDirectoryTable';
+
 
 const LGUAdminDashboard = () => {
   const [artisans, setArtisans] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState(null);
+  
+  // Modal State
+  const [modalConfig, setModalConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'confirm', // 'confirm' or 'alert'
+    onConfirm: () => {},
+  });
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -15,12 +29,12 @@ const LGUAdminDashboard = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('tbl_user_profiles')
-      .select('*')
-      .eq('role', 'artisan') // Grabs everyone, pending or approved
+      .select('*, tbl_workshops(name, address, banner_url)') 
+      .eq('role', 'artisan') 
       .order('created_at', { ascending: false });
 
     if (!error) setArtisans(data);
-    setLoading(false);
+    setLoading(false);  
   };
 
   const handleLogout = async () => {
@@ -28,23 +42,85 @@ const LGUAdminDashboard = () => {
     navigate('/');
   };
 
-  const toggleApproval = async (id, currentStatus) => {
-    const newStatus = !currentStatus;
-    
-    // Update BOTH fields so the login gatekeeper lets them in!
-    const { error } = await supabase
-      .from('tbl_user_profiles')
-      .update({ 
-        is_approved: newStatus,
-        account_status: newStatus ? 'approved' : 'pending' 
-      })
-      .eq('id', id);
-
-    if (!error) fetchArtisans(); 
+  const handleViewPublicGallery = () => {
+    window.location.href = '/#collection';
   };
 
+  const normalizeStatus = (status) => (status || '').toLowerCase();
+
+  const getStatusLabel = (status) => {
+    const normalized = normalizeStatus(status);
+    if (normalized === 'approved') return 'Approved';
+    if (normalized === 'pending_approval') return 'Pending';
+    if (normalized === 'pending') return 'Pending';
+    if (!normalized) return 'Pending';
+    return normalized.replaceAll('_', ' ');
+  };
+
+  // Helper to show custom alerts
+  const showAlert = (title, message) => {
+    setModalConfig({
+      isOpen: true,
+      title,
+      message,
+      type: 'alert',
+      onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false }))
+    });
+  };
+
+  const handleStatusUpdate = async (id, newStatus) => {
+    const actionLabel =
+      newStatus === 'approved'
+        ? 'approve'
+        : newStatus === 'pending'
+          ? 'set to pending'
+          : 'update';
+
+    // Show Confirmation Modal
+    setModalConfig({
+      isOpen: true,
+      title: 'Confirm Action',
+      message: `Are you sure you want to ${actionLabel} this artisan account?`,
+      type: 'confirm',
+      onConfirm: async () => {
+        // Close confirm modal and proceed
+        setModalConfig(prev => ({ ...prev, isOpen: false }));
+        setUpdatingId(id);
+
+        const { error } = await supabase
+          .from('tbl_user_profiles')
+          .update({
+            account_status: newStatus,
+            is_approved: newStatus === 'approved'
+          })
+          .eq('id', id);
+
+        if (error) {
+          showAlert('Update Failed', `${error.message}. Check RLS policies.`);
+          setUpdatingId(null);
+          return;
+        }
+
+        showAlert('Success', `Account is now ${getStatusLabel(newStatus)}.`);
+        await fetchArtisans();
+        setUpdatingId(null);
+      }
+    });
+  };
+  
   return (
-    <div className="min-h-screen bg-[#FDF8F5]">
+    <div className="min-h-screen bg-[#FDF8F5] relative">
+      
+      {/* Mount Modal */}
+      <ConfirmationModal 
+        isOpen={modalConfig.isOpen}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        type={modalConfig.type}
+        onConfirm={modalConfig.onConfirm}
+        onCancel={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
+      />
+
       {/* Top Header Bar */}
       <div className="bg-white border-b border-[#EAE0D5] px-8 py-4 flex justify-between items-center shadow-sm">
         <div className="flex items-center gap-3">
@@ -56,12 +132,25 @@ const LGUAdminDashboard = () => {
           </h1>
         </div>
         
-        <button 
-          onClick={handleLogout}
-          className="flex items-center gap-2 px-4 py-2 border border-red-100 text-red-600 rounded-xl hover:bg-red-50 transition-all font-bold text-[10px] tracking-widest uppercase"
-        >
-          Logout
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleViewPublicGallery}
+            className="flex items-center gap-2 px-4 py-2 border border-[#EAE0D5] text-[#1A2E35] rounded-xl hover:bg-[#FDF8F5] transition-all font-bold text-[10px] tracking-widest uppercase"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+            </svg>
+            View Public Gallery
+          </button>
+
+          <button 
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-4 py-2 border border-red-100 text-red-600 rounded-xl hover:bg-red-50 transition-all font-bold text-[10px] tracking-widest uppercase"
+          >
+            Logout
+          </button>
+        </div>
       </div>
 
       <div className="p-8 max-w-7xl mx-auto">
@@ -72,72 +161,13 @@ const LGUAdminDashboard = () => {
           </div>
         </div>
 
-        {/* Artisan Table Section */}
-        <div className="bg-white rounded-3xl border border-[#EAE0D5] shadow-xl overflow-hidden">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 bg-gray-50/50">
-                <th className="px-8 py-4">Artisan Name</th>
-                <th className="px-8 py-4">Shop Details</th>
-                <th className="px-8 py-4 text-center">Valid ID</th>
-                <th className="px-8 py-4 text-center">Status</th>
-                <th className="px-8 py-4 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {loading ? (
-                <tr><td colSpan="5" className="p-8 text-center text-gray-400 font-bold text-sm">Loading Applications...</td></tr>
-              ) : artisans.length === 0 ? (
-                <tr><td colSpan="5" className="p-8 text-center text-gray-400 font-bold text-sm">No artisans found.</td></tr>
-              ) : (
-                artisans.map((artisan) => (
-                  <tr key={artisan.id} className="hover:bg-[#FDF8F5]/50 transition-colors group">
-                    <td className="px-8 py-5">
-                      <p className="font-bold text-[#4A3224]">{artisan.full_name}</p>
-                      <p className="text-[10px] text-gray-400 font-bold">{artisan.id.substring(0, 8)}...</p>
-                    </td>
-                    <td className="px-8 py-5">
-                      <p className="text-sm font-bold text-[#1A2E35]">{artisan.shop_name || 'No Shop Set'}</p>
-                      <p className="text-xs font-medium text-gray-500">{artisan.shop_address}</p>
-                    </td>
-                    
-                    {/* NEW VALID ID COLUMN */}
-                    <td className="px-8 py-5 text-center">
-                      {artisan.valid_id_url ? (
-                        <a 
-                          href={artisan.valid_id_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="inline-block px-4 py-1.5 bg-[#1A2E35] text-white rounded-lg text-[10px] font-black tracking-widest uppercase hover:bg-[#D17B57] transition-colors shadow-md"
-                        >
-                          View ID
-                        </a>
-                      ) : (
-                        <span className="text-[10px] font-bold text-gray-400 tracking-widest uppercase bg-gray-100 px-3 py-1 rounded-md">
-                          Missing
-                        </span>
-                      )}
-                    </td>
-
-                    <td className="px-8 py-5 text-center">
-                      <span className={`px-4 py-1.5 rounded-full text-[9px] font-black tracking-widest uppercase shadow-sm border ${artisan.is_approved ? 'bg-green-50 text-green-700 border-green-200' : 'bg-orange-50 text-[#D17B57] border-orange-200'}`}>
-                        {artisan.is_approved ? '✓ Verified' : '● Pending'}
-                      </span>
-                    </td>
-                    <td className="px-8 py-5 text-right">
-                      <button 
-                        onClick={() => toggleApproval(artisan.id, artisan.is_approved)}
-                        className={`text-[10px] font-black tracking-widest uppercase px-4 py-2 rounded-lg transition-all border ${artisan.is_approved ? 'text-red-500 hover:bg-red-50 border-transparent hover:border-red-100' : 'bg-[#D17B57] text-white hover:bg-[#A65B3D] hover:shadow-lg border-transparent'}`}
-                      >
-                        {artisan.is_approved ? 'Revoke' : 'Approve'}
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <ArtisanDirectoryTable
+          artisans={artisans}
+          updatingId={updatingId}
+          normalizeStatus={normalizeStatus}
+          getStatusLabel={getStatusLabel}
+          onStatusUpdate={handleStatusUpdate}
+        />
       </div>
     </div>
   );

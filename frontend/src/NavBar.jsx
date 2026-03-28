@@ -63,14 +63,18 @@ export default function Navbar({ onLoginClick }) {
     <nav className="fixed top-0 w-full z-[100] bg-white/80 backdrop-blur-md border-b border-white/20 px-6 md:px-12 py-4 flex justify-between items-center transition-all duration-300 shadow-sm">
       {/* Brand Logo */}
       <div className="flex items-center gap-4 group cursor-pointer" onClick={() => navigate('/')}>
-        <div className="w-9 h-9 md:w-10 md:h-10 bg-gradient-to-br from-[#4A3224] to-[#8B5A43] rounded-full flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform">
-          <span className="text-[#FDF8F5] text-[10px] md:text-xs font-black tracking-wider">BP</span>
-        </div>
+        
+        <img 
+          src="/assets/BoloFinal.png" 
+          alt="Bolo Pandayan Logo" 
+          className="w-9 h-9 md:w-10 md:h-10 object-contain group-hover:scale-105 transition-transform"
+        />
+
         <h1 className="text-lg md:text-2xl font-black tracking-[0.1em] md:tracking-[0.2em] text-[#4A3224] font-serif uppercase">
           Bolo Pandayan
         </h1>
-      </div>
-      
+        
+      </div>      
       {/* Desktop Navigation */}
       <div className="hidden md:flex items-center gap-10 font-bold text-xs tracking-[0.15em] text-[#6B5041]">
         <Link to="/" className="hover:text-[#D17B57] transition-colors">HOME</Link>

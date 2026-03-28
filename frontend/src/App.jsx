@@ -12,6 +12,9 @@ import ArtisanDashboard from './ArtisanDashboard'
 import ProtectedRoute from './ProtectedRoute'
 import LGUAdminDashboard from './LGUAdminDashboard'
 import UpdatePassword from './UpdatePassword' // Create this file next!
+import WorkshopPublicPage from './WorkshopPublicPage'
+import CollectionItemPage from './CollectionItemPage'
+import DamageReports from './DamageReports'
 
 function Home({ onLoginOpen }) {
   return (
@@ -71,6 +74,16 @@ function App() {
         <Route path="/" element={<Home onLoginOpen={() => setIsLoginOpen(true)} />} />
         <Route path="/register" element={<Register />} />
         <Route path="/update-password" element={<UpdatePassword />} />
+        <Route path="/workshops/:workshopId" element={<WorkshopPublicPage />} />
+        <Route path="/collection/:productId" element={<CollectionItemPage />} />
+        <Route
+          path="/admin/workshops/:workshopId/damage-reports"
+          element={
+            <ProtectedRoute user={user} profile={profile} allowedRoles={['admin', 'developer']}>
+              <DamageReports />
+            </ProtectedRoute>
+          }
+        />
         {/* LGU ADMIN DASHBOARD */}
         <Route 
           path="/lgu-dashboard" 

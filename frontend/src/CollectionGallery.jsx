@@ -18,17 +18,26 @@ export default function CollectionGallery() {
     fetchProducts()
   }, [])
 
-  // Only show the gallery if there are actual products
   if (products.length === 0) {
     return (
-      <section className="py-20 bg-[#FDF8F5] text-center">
-        <p className="text-gray-400 font-serif italic">The digital collection is currently being curated...</p>
+      <section className="py-32 bg-[#121212] text-center border-t border-white/5">
+        <p className="text-[#EAE0D5]/50 font-serif italic text-lg">The digital collection is currently being curated...</p>
       </section>
     )
   }
 
   return (
-    <section id="collection" className="bg-[#D17B57] py-20 px-10">
+    <section id="collection" className="bg-[#121212] py-32 px-6 md:px-12 border-t border-white/5 relative">
+      <div className="max-w-7xl mx-auto mb-20 flex flex-col items-center text-center">
+        <h2 className="text-4xl md:text-5xl font-black text-[#FDF8F5] font-serif uppercase tracking-widest mb-6 drop-shadow-lg">
+          Products
+        </h2>
+        
+        {/* Sleeker gradient accent line */}
+        <div className="w-24 h-1 bg-gradient-to-r from-transparent via-[#D17B57] to-transparent rounded-full"></div>
+        
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
         {products.map((item) => (
           <ProjectCard 

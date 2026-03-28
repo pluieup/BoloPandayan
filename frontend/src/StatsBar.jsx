@@ -14,47 +14,48 @@ export default function StatsBar() {
 
   useEffect(() => {
     const fetchStats = async () => {
-    // 1. Count ONLY approved artisans for "Registered Pandays"
-    const { count: artisanCount } = await supabase
-      .from('tbl_user_profiles')
-      .select('*', { count: 'exact', head: true })
-      .eq('role', 'artisan')
-      .eq('is_approved', true);
+      const approvedArtisansPromise = supabase
+        .from('tbl_user_profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('role', 'artisan')
+        .or('is_approved.eq.true,account_status.eq.approved,account_status.eq.Approved')
 
-    // 2. Count Unique Active Workshops (Only for Approved Artisans)
-    // We filter by 'artisan' role and ensure shop_name is not null
-    const { data: workshopData } = await supabase
-      .from('tbl_user_profiles')
-      .select('shop_name')
-      .eq('role', 'artisan')
-      .eq('is_approved', true)
-      .not('shop_name', 'is', null);
-  
-    const uniqueWorkshops = new Set(workshopData?.map(w => w.shop_name)).size;
+      const totalArtisansPromise = supabase
+        .from('tbl_user_profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('role', 'artisan')
 
-    // 3. Count Total Heritage Items (Products)
-    const { count: itemCount } = await supabase
-      .from('tbl_products')
-      .select('*', { count: 'exact', head: true });
+      const workshopsPromise = supabase
+        .from('tbl_workshops')
+        .select('*', { count: 'exact', head: true })
 
-    // 4. Calculate % of Workshops Assessed
-    // Logic: (Approved Artisans / Total Artisan Registrations)
-    const { count: totalArtisans } = await supabase
-      .from('tbl_user_profiles')
-      .select('*', { count: 'exact', head: true })
-      .eq('role', 'artisan');
+      const productsPromise = supabase
+        .from('tbl_products')
+        .select('*', { count: 'exact', head: true })
 
-    const percentage = totalArtisans > 0 
-      ? Math.round(((artisanCount || 0) / totalArtisans) * 100) 
-      : 0;
+      const [approvedRes, totalRes, workshopsRes, productsRes] = await Promise.all([
+        approvedArtisansPromise,
+        totalArtisansPromise,
+        workshopsPromise,
+        productsPromise,
+      ])
 
-    setStats({
-      pandays: artisanCount || 0,
-      workshops: uniqueWorkshops || 0,
-      items: itemCount || 0,
-      assessed: percentage
-    });
-  }
+      const artisanCount = approvedRes.count || 0
+      const totalArtisans = totalRes.count || 0
+      const workshopCount = workshopsRes.count || 0
+      const itemCount = productsRes.count || 0
+
+      const percentage = totalArtisans > 0
+        ? Math.round((artisanCount / totalArtisans) * 100)
+        : 0
+
+      setStats({
+        pandays: artisanCount,
+        workshops: workshopCount,
+        items: itemCount,
+        assessed: percentage
+      })
+    }
 
     fetchStats()
 
