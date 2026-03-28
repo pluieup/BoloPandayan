@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react' // Add useEffect
+import { lazy, Suspense, useState, useEffect } from 'react' // Add useEffect
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient' // Import your supabase client
 import StatsBar from '../components/StatsBar'
@@ -6,16 +6,16 @@ import Navbar from './NavBar'
 import Hero from './Hero'
 import WorkshopList from './WorkShopList'
 import CollectionGallery from './CollectionGallery'
-import Register from '../components/Register'
 import LoginModal from '../components/LoginModal'
-import ArtisanDashboard from '../artisan/ArtisanDashboard'
 import ProtectedRoute from './ProtectedRoute'
-import LGUAdminDashboard from '../lgu/LGUAdminDashboard'
-import UpdatePassword from '../components/UpdatePassword' // Create this file next!
-import WorkshopPublicPage from '../artisan/WorkshopPublicPage'
-import CollectionItemPage from './CollectionItemPage'
-import DamageReports from '../drrm/DamageReports'
-import RiskProfile from '../drrm/RiskProfile'
+const Register = lazy(() => import('../components/Register'))
+const ArtisanDashboard = lazy(() => import('../artisan/ArtisanDashboard'))
+const LGUAdminDashboard = lazy(() => import('../lgu/LGUAdminDashboard'))
+const UpdatePassword = lazy(() => import('../components/UpdatePassword'))
+const WorkshopPublicPage = lazy(() => import('../artisan/WorkshopPublicPage'))
+const CollectionItemPage = lazy(() => import('./CollectionItemPage'))
+const DamageReports = lazy(() => import('../drrm/DamageReports'))
+const RiskProfile = lazy(() => import('../drrm/RiskProfile'))
 
 function Home({ onLoginOpen }) {
   return (
@@ -71,45 +71,55 @@ function App() {
 
   return (
     <main className="min-h-screen bg-[#FDF8F5]">
-      <Routes>
-        <Route path="/" element={<Home onLoginOpen={() => setIsLoginOpen(true)} />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/update-password" element={<UpdatePassword />} />
-        <Route path="/workshops/:workshopId" element={<WorkshopPublicPage />} />
-        <Route path="/collection/:productId" element={<CollectionItemPage />} />
-        <Route path="/risk-profile/:workshopId" element={<RiskProfile />} />
-        <Route
-          path="/admin/workshops/:workshopId/damage-reports"
-          element={
-            <ProtectedRoute user={user} profile={profile} allowedRoles={['admin', 'developer']}>
-              <DamageReports />
-            </ProtectedRoute>
-          }
-        />
-        {/* LGU ADMIN DASHBOARD */}
-        <Route 
-          path="/lgu-dashboard" 
-          element={
-            <ProtectedRoute user={user} profile={profile} allowedRoles={['admin', 'developer']}>
-              <LGUAdminDashboard />
-            </ProtectedRoute>
-          } 
-        />
+      <Suspense fallback={<div className="h-screen flex items-center justify-center">Loading page...</div>}>
+        <Routes>
+          <Route path="/" element={<Home onLoginOpen={() => setIsLoginOpen(true)} />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/update-password" element={<UpdatePassword />} />
+          <Route path="/workshops/:workshopId" element={<WorkshopPublicPage />} />
+          <Route path="/collection/:productId" element={<CollectionItemPage />} />
+          <Route path="/risk-profile/:workshopId" element={<RiskProfile />} />
+          <Route
+            path="/admin/workshops/:workshopId/risk-profile"
+            element={
+              <ProtectedRoute user={user} profile={profile} allowedRoles={['admin', 'developer']}>
+                <RiskProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/workshops/:workshopId/damage-reports"
+            element={
+              <ProtectedRoute user={user} profile={profile} allowedRoles={['admin', 'developer']}>
+                <DamageReports />
+              </ProtectedRoute>
+            }
+          />
+          {/* LGU ADMIN DASHBOARD */}
+          <Route 
+            path="/lgu-dashboard" 
+            element={
+              <ProtectedRoute user={user} profile={profile} allowedRoles={['admin', 'developer']}>
+                <LGUAdminDashboard />
+              </ProtectedRoute>
+            } 
+          />
 
-        <Route path="/admin-dashboard" element={<Navigate to="/lgu-dashboard" replace />} />
+          <Route path="/admin-dashboard" element={<Navigate to="/lgu-dashboard" replace />} />
 
-        {/* ARTISAN DASHBOARD */}
-        <Route 
-          path="/artisan-dashboard" 
-          element={
-            <ProtectedRoute user={user} profile={profile} allowedRoles={['artisan', 'developer']}>
-              <ArtisanDashboard />
-            </ProtectedRoute>
-          } 
-        />
+          {/* ARTISAN DASHBOARD */}
+          <Route 
+            path="/artisan-dashboard" 
+            element={
+              <ProtectedRoute user={user} profile={profile} allowedRoles={['artisan', 'developer']}>
+                <ArtisanDashboard />
+              </ProtectedRoute>
+            } 
+          />
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
 
       <LoginModal 
         isOpen={isLoginOpen} 

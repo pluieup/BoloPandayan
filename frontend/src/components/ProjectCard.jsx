@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 
 export default function ProjectCard({ id, name, image }) {
   return (
-    <Link to={`/product/${id}`} className="group block">
+    <Link to={`/collection/${id}`} className="group block">
       <div className="relative overflow-hidden rounded-2xl bg-[#1A1A1A] border border-white/5 transition-all duration-500 hover:border-[#D17B57]/50 hover:shadow-[0_0_30px_rgba(209,123,87,0.15)] hover:-translate-y-2">
         
         {/* Edge-to-Edge Image Container */}

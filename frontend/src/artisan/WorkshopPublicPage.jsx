@@ -120,7 +120,6 @@ export default function WorkshopPublicPage() {
 
   return (
     <div className="min-h-screen bg-[#FDF8F5]">
-      {/* Refined Header */}
       <header className="relative h-96 md:h-[32rem] overflow-hidden bg-[#121212]">
         <div className="absolute inset-0 bg-cover bg-center opacity-50" style={{ backgroundImage: `url(${bannerUrl})` }}></div>
         <div className="absolute inset-0 bg-gradient-to-t from-[#FDF8F5] via-[#121212]/40 to-transparent"></div>
@@ -145,7 +144,6 @@ export default function WorkshopPublicPage() {
 
       <main className="max-w-7xl mx-auto px-8 md:px-16 py-16">
         
-        {/* Editorial Story Section */}
         <section className="mb-20 max-w-4xl relative">
           <div className="flex items-center gap-4 mb-8">
             <div className="h-[2px] w-12 bg-[#D17B57]"></div>
@@ -155,23 +153,20 @@ export default function WorkshopPublicPage() {
             {description}
           </p>
 
-          {/* Admin Button - Floating on the right side on desktop for a cleaner look */}
+          {/* Admin Buttons - Now styled correctly inline with the content block */}
           {(userRole === 'admin' || userRole === 'developer') && (
-            <div className="mt-10 flex flex-col gap-3 lg:absolute lg:top-0 lg:right-[-220px] lg:mt-0">
-               
-               {/* 1. The New Risk Profile Button */}
+            <div className="mt-12 pt-8 border-t border-[#D17B57]/20 flex flex-col sm:flex-row gap-4">
                <Link
                 to={`/admin/workshops/${workshop.id}/risk-profile`}
-                className="inline-flex items-center justify-start gap-3 py-3 px-6 bg-white border border-[#EAE0D5] text-[#1A2E35] rounded-xl text-[9px] font-black tracking-widest uppercase hover:border-[#D17B57] hover:text-[#D17B57] transition-all shadow-sm"
+                className="flex-1 inline-flex items-center justify-center gap-3 py-4 px-6 bg-white border border-[#D17B57]/30 text-[#D17B57] rounded-xl text-[10px] font-black tracking-widest uppercase hover:bg-[#D17B57] hover:text-white transition-all shadow-sm"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
                 Risk Profile Map
               </Link>
 
-               {/* 2. The Existing Disaster Records Button */}
                <Link
                 to={`/admin/workshops/${workshop.id}/damage-reports`}
-                className="inline-flex items-center justify-start gap-3 py-3 px-6 bg-[#1A1A1A] border border-white/10 text-white rounded-xl text-[9px] font-black tracking-widest uppercase hover:bg-[#D17B57] hover:border-[#D17B57] transition-all shadow-xl"
+                className="flex-1 inline-flex items-center justify-center gap-3 py-4 px-6 bg-[#1A1A1A] border border-[#1A1A1A] text-white rounded-xl text-[10px] font-black tracking-widest uppercase hover:bg-[#D17B57] hover:border-[#D17B57] transition-all shadow-xl"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 Disaster Records
@@ -180,7 +175,6 @@ export default function WorkshopPublicPage() {
           )}
         </section>
 
-        {/* Artisans Section */}
         <section className="mb-24">
           <h2 className="text-3xl font-black text-[#1A1A1A] font-serif uppercase tracking-widest mb-10">Master Artisans</h2>
           {artisans.length === 0 ? (
@@ -197,7 +191,6 @@ export default function WorkshopPublicPage() {
           )}
         </section>
 
-        {/* Products Section */}
         <section>
           <h2 className="text-3xl font-black text-[#1A1A1A] font-serif uppercase tracking-widest mb-10">Forged Works</h2>
           {products.length === 0 ? (
