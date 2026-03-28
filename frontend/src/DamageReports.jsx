@@ -8,6 +8,9 @@ export default function DamageReports() {
   const [loading, setLoading] = useState(true)
   const [workshopName, setWorkshopName] = useState('Loading...')
   
+  // Track the current logged-in admin
+  const [currentUserId, setCurrentUserId] = useState(null)
+  
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingId, setEditingId] = useState(null)
@@ -20,13 +23,19 @@ export default function DamageReports() {
   })
 
   useEffect(() => {
+    // Get the current user ID when the component mounts
+    const getCurrentUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user) setCurrentUserId(session.user.id)
+    }
+    getCurrentUser()
     fetchData()
   }, [workshopId])
 
   const fetchData = async () => {
     setLoading(true)
     
-    // Get Workshop Name for the header
+    // Get Workshop Name
     const { data: workshop } = await supabase
       .from('tbl_workshops')
       .select('name')
@@ -35,10 +44,10 @@ export default function DamageReports() {
       
     if (workshop) setWorkshopName(workshop.name)
 
-    // Get Reports
+    // Get Reports AND the admin's name who last edited it
     const { data: reportData } = await supabase
       .from('tbl_damage_reports')
-      .select('*')
+      .select('*, tbl_user_profiles!last_edited_by(full_name)')
       .eq('workshop_id', workshopId)
       .order('incident_date', { ascending: false })
 
@@ -46,11 +55,9 @@ export default function DamageReports() {
     setLoading(false)
   }
 
-  // Calculate total damages
   const totalEstimatedDamage = useMemo(() => {
     return reports.reduce((sum, report) => sum + Number(report.estimated_cost || 0), 0)
   }, [reports])
-
 
   const openModal = (report = null) => {
     if (report) {
@@ -84,7 +91,9 @@ export default function DamageReports() {
       disaster_type: formData.disaster_type,
       description: formData.description,
       estimated_cost: Number(formData.estimated_cost),
-      admin_notes: formData.admin_notes
+      admin_notes: formData.admin_notes,
+      updated_at: new Date().toISOString(),
+      last_edited_by: currentUserId
     }
 
     if (editingId) {
@@ -93,6 +102,15 @@ export default function DamageReports() {
       await supabase.from('tbl_damage_reports').insert([payload])
     }
 
+    setIsModalOpen(false)
+    fetchData()
+  }
+
+  const handleDelete = async () => {
+    const confirmed = window.confirm("Are you sure you want to delete this damage report? This action cannot be undone.")
+    if (!confirmed) return
+
+    await supabase.from('tbl_damage_reports').delete().eq('id', editingId)
     setIsModalOpen(false)
     fetchData()
   }
@@ -115,7 +133,6 @@ export default function DamageReports() {
                 </p>
              </div>
              
-             {/* Total Damages Summary Card */}
              <div className="bg-red-950/40 border border-red-900/50 rounded-2xl px-8 py-4 text-right">
                 <p className="text-[10px] text-red-300 uppercase tracking-widest font-black mb-1">Total Estimated Recovery</p>
                 <p className="text-2xl font-black text-white">PHP {totalEstimatedDamage.toLocaleString()}</p>
@@ -153,7 +170,7 @@ export default function DamageReports() {
                 onClick={() => openModal(report)}
                 className="bg-white border border-[#EAE0D5] rounded-2xl p-8 shadow-sm hover:shadow-xl hover:border-[#D17B57]/30 transition-all cursor-pointer group flex flex-col md:flex-row gap-8"
               >
-                {/* Left Column: Dates & Type */}
+                {/* Left Column */}
                 <div className="md:w-1/4 border-b md:border-b-0 md:border-r border-[#EAE0D5] pb-6 md:pb-0 md:pr-6">
                    <span className="inline-block bg-red-50 text-red-700 border border-red-100 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest mb-4">
                       {report.disaster_type}
@@ -164,26 +181,44 @@ export default function DamageReports() {
                     </h3>
                 </div>
 
-                {/* Middle Column: Description */}
-                <div className="md:w-2/4">
-                   <p className="text-[10px] text-gray-400 uppercase tracking-widest font-black mb-2">Damage Description</p>
-                   <p className="text-gray-700 text-sm leading-relaxed">{report.description}</p>
+                {/* Middle Column */}
+                <div className="md:w-2/4 flex flex-col justify-between">
+                   <div>
+                     <p className="text-[10px] text-gray-400 uppercase tracking-widest font-black mb-2">Damage Description</p>
+                     <p className="text-gray-700 text-sm leading-relaxed">{report.description}</p>
+                     
+                     {report.admin_notes && (
+                        <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                           <p className="text-[9px] text-gray-400 uppercase tracking-widest font-black mb-1">Admin Notes</p>
+                           <p className="text-gray-600 text-xs italic">{report.admin_notes}</p>
+                        </div>
+                     )}
+                   </div>
                    
-                   {report.admin_notes && (
-                      <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
-                         <p className="text-[9px] text-gray-400 uppercase tracking-widest font-black mb-1">Admin Notes</p>
-                         <p className="text-gray-600 text-xs italic">{report.admin_notes}</p>
-                      </div>
+                   {/* Audit Trail Display */}
+                   {report.updated_at ? (
+                     <div className="mt-6 pt-4 border-t border-gray-100 flex items-center gap-2 text-[9px] text-gray-400 font-bold uppercase tracking-widest">
+                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                       Last edited: {new Date(report.updated_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })} 
+                       {report.tbl_user_profiles?.full_name ? ` by ${report.tbl_user_profiles.full_name}` : ''}
+                     </div>
+                   ) : (
+                     <div className="mt-6 pt-4 border-t border-gray-100 flex items-center gap-2 text-[9px] text-gray-300 font-bold uppercase tracking-widest">
+                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                       No recent edits tracked
+                     </div>
                    )}
                 </div>
 
-                {/* Right Column: Cost */}
-                <div className="md:w-1/4 text-left md:text-right pt-4 md:pt-0">
-                    <p className="text-[10px] text-gray-400 uppercase tracking-widest font-black mb-1">Est. Repair Cost</p>
-                    <p className="text-2xl font-black text-[#D17B57]">PHP {report.estimated_cost?.toLocaleString() || '0'}</p>
+                {/* Right Column */}
+                <div className="md:w-1/4 text-left md:text-right pt-4 md:pt-0 flex flex-col justify-between">
+                    <div>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-widest font-black mb-1">Est. Repair Cost</p>
+                      <p className="text-2xl font-black text-[#D17B57]">PHP {report.estimated_cost?.toLocaleString() || '0'}</p>
+                    </div>
                     
                     <div className="mt-6 opacity-0 group-hover:opacity-100 transition-opacity flex justify-end">
-                       <span className="text-[9px] font-black text-[#D17B57] uppercase tracking-widest bg-[#FDF8F5] px-3 py-1.5 rounded-md">Edit Record →</span>
+                       <span className="text-[9px] font-black text-[#D17B57] uppercase tracking-widest bg-[#FDF8F5] px-3 py-1.5 rounded-md border border-[#EAE0D5]">Edit Record →</span>
                     </div>
                 </div>
               </div>
@@ -192,11 +227,14 @@ export default function DamageReports() {
         )}
       </div>
 
-      {/* Editor Modal */}
+      {/* Editor Modal (Now with Max-Height and Scrolling) */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-[#EAE0D5]">
-            <div className="bg-[#121212] px-8 py-5 border-b border-[#D17B57]/30 flex justify-between items-center">
+          {/* Main Modal Container: added max-h-[90vh] and flex-col */}
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-[#EAE0D5] flex flex-col max-h-[90vh]">
+            
+            {/* Modal Header (Pinned) */}
+            <div className="bg-[#121212] px-8 py-5 border-b border-[#D17B57]/30 flex justify-between items-center shrink-0">
               <h3 className="text-white font-black uppercase tracking-widest text-sm">
                 {editingId ? 'Edit Damage Record' : 'File New Damage Record'}
               </h3>
@@ -205,45 +243,60 @@ export default function DamageReports() {
               </button>
             </div>
             
-            <form onSubmit={handleSave} className="p-8 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <form onSubmit={handleSave} className="flex flex-col overflow-hidden">
+              
+              {/* Scrollable Form Body */}
+              <div className="p-8 space-y-6 overflow-y-auto max-h-[60vh]">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Date of Incident</label>
+                    <input type="date" required value={formData.incident_date} onChange={e => setFormData({...formData, incident_date: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#D17B57] focus:ring-1 focus:ring-[#D17B57]/20 transition-all" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Disaster Type</label>
+                    <select value={formData.disaster_type} onChange={e => setFormData({...formData, disaster_type: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#D17B57] focus:ring-1 focus:ring-[#D17B57]/20 transition-all">
+                      <option>Typhoon</option>
+                      <option>Flood</option>
+                      <option>Landslide</option>
+                      <option>Fire</option>
+                      <option>Earthquake</option>
+                    </select>
+                  </div>
+                </div>
+
                 <div>
-                  <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Date of Incident</label>
-                  <input type="date" required value={formData.incident_date} onChange={e => setFormData({...formData, incident_date: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#D17B57] focus:ring-1 focus:ring-[#D17B57]/20 transition-all" />
+                  <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Detailed Description of Damage</label>
+                  <textarea required rows="4" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} placeholder="e.g., Roof collapsed over the forge area, ruining two anvils..." className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#D17B57] focus:ring-1 focus:ring-[#D17B57]/20 transition-all"></textarea>
                 </div>
+
                 <div>
-                  <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Disaster Type</label>
-                  <select value={formData.disaster_type} onChange={e => setFormData({...formData, disaster_type: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#D17B57] focus:ring-1 focus:ring-[#D17B57]/20 transition-all">
-                    <option>Typhoon</option>
-                    <option>Flood</option>
-                    <option>Landslide</option>
-                    <option>Fire</option>
-                    <option>Earthquake</option>
-                  </select>
+                  <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Estimated Cost to Fix (PHP)</label>
+                  <div className="relative">
+                     <span className="absolute left-4 top-3 text-gray-400 font-bold">₱</span>
+                     <input type="number" required value={formData.estimated_cost} onChange={e => setFormData({...formData, estimated_cost: e.target.value})} placeholder="50000" className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-8 pr-4 py-3 text-sm focus:outline-none focus:border-[#D17B57] focus:ring-1 focus:ring-[#D17B57]/20 transition-all" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Admin Notes (Internal Use Only)</label>
+                  <textarea rows="2" value={formData.admin_notes} onChange={e => setFormData({...formData, admin_notes: e.target.value})} placeholder="Funding request sent to DOST..." className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#D17B57] focus:ring-1 focus:ring-[#D17B57]/20 transition-all"></textarea>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Detailed Description of Damage</label>
-                <textarea required rows="4" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} placeholder="e.g., Roof collapsed over the forge area, ruining two anvils..." className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#D17B57] focus:ring-1 focus:ring-[#D17B57]/20 transition-all"></textarea>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Estimated Cost to Fix (PHP)</label>
-                <div className="relative">
-                   <span className="absolute left-4 top-3 text-gray-400 font-bold">₱</span>
-                   <input type="number" required value={formData.estimated_cost} onChange={e => setFormData({...formData, estimated_cost: e.target.value})} placeholder="50000" className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-8 pr-4 py-3 text-sm focus:outline-none focus:border-[#D17B57] focus:ring-1 focus:ring-[#D17B57]/20 transition-all" />
+              {/* Modal Footer (Pinned to bottom) */}
+              <div className="px-8 py-5 bg-gray-50 border-t border-[#EAE0D5] flex justify-between items-center shrink-0">
+                <div>
+                  {editingId && (
+                    <button type="button" onClick={handleDelete} className="px-4 py-3 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors">
+                      Delete Record
+                    </button>
+                  )}
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Admin Notes (Internal Use Only)</label>
-                <textarea rows="2" value={formData.admin_notes} onChange={e => setFormData({...formData, admin_notes: e.target.value})} placeholder="Funding request sent to DOST..." className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#D17B57] focus:ring-1 focus:ring-[#D17B57]/20 transition-all"></textarea>
-              </div>
-
-              <div className="pt-6 flex gap-4 border-t border-[#EAE0D5]">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 px-4 py-4 bg-gray-100 text-gray-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-200 transition-colors">Cancel</button>
-                <button type="submit" className="flex-1 px-4 py-4 bg-[#1A2E35] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#111e22] transition-colors shadow-lg">Save Record</button>
+                
+                <div className="flex gap-4">
+                  <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-3 bg-white border border-gray-200 text-gray-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-100 transition-colors">Cancel</button>
+                  <button type="submit" className="px-6 py-3 bg-[#1A2E35] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#111e22] transition-colors shadow-lg">Save Record</button>
+                </div>
               </div>
             </form>
           </div>
