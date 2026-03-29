@@ -33,21 +33,28 @@ export default function StatsBar({ isDarkMode }) {
         .from('tbl_products')
         .select('*', { count: 'exact', head: true })
 
-      const [approvedRes, totalRes, workshopsRes, productsRes] = await Promise.all([
+      // Get count of unique workshops that have at least one risk assessment
+      const assessedWorkshopsPromise = supabase
+        .from('tbl_workshop_risk_assessments')
+        .select('workshop_id')
+
+      const [approvedRes, workshopsRes, productsRes, assessmentsRes] = await Promise.all([
         approvedArtisansPromise,
-        totalArtisansPromise,
         workshopsPromise,
         productsPromise,
+        assessedWorkshopsPromise
       ])
 
       const artisanCount = approvedRes.count || 0
-      const totalArtisans = totalRes.count || 0
       const workshopCount = workshopsRes.count || 0
       const itemCount = productsRes.count || 0
 
-      const percentage = totalArtisans > 0
-        ? Math.round((artisanCount / totalArtisans) * 100)
-        : 0
+      // Calculate percentage based on unique assessed workshops vs total workshops
+      let percentage = 0
+      if (workshopCount > 0 && assessmentsRes.data) {
+        const uniqueAssessedWorkshops = new Set(assessmentsRes.data.map(a => a.workshop_id))
+        percentage = Math.round((uniqueAssessedWorkshops.size / workshopCount) * 100)
+      }
 
       setStats({
         pandays: artisanCount,
