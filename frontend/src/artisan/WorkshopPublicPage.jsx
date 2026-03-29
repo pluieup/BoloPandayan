@@ -20,6 +20,8 @@ export default function WorkshopPublicPage() {
   const [products, setProducts] = useState([])
   const [userRole, setUserRole] = useState(null)
   const [latestRiskRecord, setLatestRiskRecord] = useState(null)
+  const [selectedArtisan, setSelectedArtisan] = useState(null)
+  const [isArtisanModalOpen, setIsArtisanModalOpen] = useState(false)
 
   useEffect(() => {
     const fetchWorkshopPage = async () => {
@@ -55,7 +57,7 @@ export default function WorkshopPublicPage() {
 
       const { data: latestRiskData } = await supabase
         .from('tbl_workshop_risk_assessments')
-        .select('id, assessed_at, risk_score, risk_label')
+        .select('id, assessed_at, risk_score, risk_label, hazard_snapshot')
         .eq('workshop_id', workshopId)
         .order('assessed_at', { ascending: false })
         .limit(1)
@@ -64,7 +66,7 @@ export default function WorkshopPublicPage() {
 
       const { data: artisanData, error: artisanError } = await supabase
         .from('tbl_user_profiles')
-        .select('id, full_name, shop_name, shop_address, shop_description, banner_url, workshop_id, account_status')
+        .select('id, full_name, shop_name, shop_address, shop_description, banner_url, workshop_id, account_status, profile_photo_url, bio')
         .eq('role', 'artisan')
         .eq('workshop_id', workshopId)
         .in('account_status', ['approved', 'Approved'])
@@ -139,6 +141,14 @@ export default function WorkshopPublicPage() {
       year: 'numeric',
     })
   }, [latestRiskRecord])
+
+  const mapLat = useMemo(() => {
+    return parseFloat(latestRiskRecord?.hazard_snapshot?.lat || workshop?.lat || 9.6053)
+  }, [latestRiskRecord, workshop])
+
+  const mapLng = useMemo(() => {
+    return parseFloat(latestRiskRecord?.hazard_snapshot?.lng || workshop?.lng || 124.0135)
+  }, [latestRiskRecord, workshop])
 
 
   if (loading) {
@@ -240,19 +250,42 @@ export default function WorkshopPublicPage() {
 
           </div>
 
-          {(workshop?.lat && workshop?.lng) && (
-            <div className="mt-12 rounded-2xl overflow-hidden shadow-lg border border-[#EAD6CA] h-96">
-              <MapContainer
-                center={[parseFloat(workshop.lat), parseFloat(workshop.lng)]}
-                zoom={14}
-                style={{ height: '100%', width: '100%' }}
-              >
-                <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution='&copy; OpenStreetMap contributors'
-                />
-                <Marker position={[parseFloat(workshop.lat), parseFloat(workshop.lng)]} />
-              </MapContainer>
+          {/* Workshop Location Map - Only shown if an assessment record exists */}
+          {latestRiskRecord && (
+            <div className="mt-12">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="h-[2px] w-12 bg-[#D17B57]"></div>
+                <h2 className="text-sm font-black text-[#D17B57] uppercase tracking-[0.3em] font-sans">Workshop Location</h2>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <p className="text-[#8B5E3C] text-xs uppercase tracking-widest font-black font-sans">
+                  Coordinates captured during Risk Assessment
+                </p>
+                <a 
+                  href={`https://www.google.com/maps/search/?api=1&query=${mapLat},${mapLng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-[#D17B57]/30 text-[#D17B57] rounded-full text-[10px] font-black tracking-widest uppercase hover:bg-[#D17B57] hover:text-white transition-all shadow-sm w-fit"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                  Open in Google Maps
+                </a>
+              </div>
+              
+              <div className="rounded-2xl overflow-hidden shadow-lg border border-[#EAD6CA] h-[400px] z-0 relative">
+                <MapContainer
+                  center={[mapLat, mapLng]}
+                  zoom={((latestRiskRecord?.hazard_snapshot?.lat) || workshop?.lat) ? 15 : 12}
+                  style={{ height: '100%', width: '100%', zIndex: 0 }}
+                >
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; OpenStreetMap contributors'
+                  />
+                  <Marker position={[mapLat, mapLng]} />
+                </MapContainer>
+              </div>
             </div>
           )}
         </section>
@@ -264,9 +297,25 @@ export default function WorkshopPublicPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {artisans.map((artisan) => (
-                <div key={artisan.id} className="group bg-white rounded-2xl p-8 shadow-sm hover:shadow-xl border border-[#EAE0D5] transition-all duration-300">
-                  <h3 className="text-xl font-black text-[#1A1A1A] uppercase tracking-wider group-hover:text-[#D17B57] transition-colors">{artisan.full_name}</h3>
-                  <p className="text-[10px] font-black tracking-[0.2em] text-[#8B5E3C] uppercase mt-2">Resident Blacksmith</p>
+                <div 
+                  key={artisan.id} 
+                  onClick={() => {
+                    setSelectedArtisan(artisan)
+                    setIsArtisanModalOpen(true)
+                  }}
+                  className="group bg-white rounded-2xl p-6 shadow-sm hover:shadow-xl border border-[#EAE0D5] transition-all duration-300 cursor-pointer flex items-center gap-6"
+                >
+                  <div className="w-16 h-16 rounded-full overflow-hidden bg-[#EAE0D5] border-2 border-transparent group-hover:border-[#D17B57] transition-all shrink-0">
+                    <img 
+                      src={artisan.profile_photo_url || '/assets/Background.png'} 
+                      alt={artisan.full_name} 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-[#1A1A1A] uppercase tracking-wider group-hover:text-[#D17B57] transition-colors">{artisan.full_name}</h3>
+                    <p className="text-[10px] font-black tracking-[0.2em] text-[#8B5E3C] uppercase mt-1">Resident Blacksmith</p>
+                  </div>
                 </div>
               ))}
             </div>
@@ -308,6 +357,34 @@ export default function WorkshopPublicPage() {
           )}
         </section>
       </main>
+
+      {/* Artisan Profile Modal */}
+      {isArtisanModalOpen && selectedArtisan && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsArtisanModalOpen(false)}></div>
+          <div className="relative z-10 w-full max-w-lg bg-[#FDF8F5] rounded-[2rem] p-8 md:p-12 shadow-2xl flex flex-col items-center text-center animate-in zoom-in-95 duration-300">
+            <button 
+              onClick={() => setIsArtisanModalOpen(false)}
+              className="absolute top-6 right-6 text-gray-400 hover:text-[#4A3224] transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-[#EAE0D5] overflow-hidden mb-6 shadow-xl">
+              <img 
+                src={selectedArtisan.profile_photo_url || '/assets/Background.png'} 
+                alt={selectedArtisan.full_name} 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <h3 className="text-3xl font-black text-[#1A1A1A] font-serif uppercase tracking-wider mb-2">{selectedArtisan.full_name}</h3>
+            <p className="text-[10px] font-black tracking-[0.3em] text-[#D17B57] uppercase mb-8">Master Blacksmith</p>
+            <div className="w-16 h-px bg-[#D17B57]/30 mx-auto mb-8"></div>
+            <p className="text-[#6B5041] leading-relaxed text-sm md:text-base font-serif whitespace-pre-wrap px-4">
+              {selectedArtisan.bio || 'No biography provided yet.'}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

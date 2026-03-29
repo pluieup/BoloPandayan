@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 
-export default function Navbar({ onLoginClick }) {
+export default function Navbar({ onLoginClick, isDarkMode, toggleTheme }) {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [isMenuOpen, setIsMenuOpen] = useState(false) // Toggle for mobile menu
@@ -74,8 +74,26 @@ export default function Navbar({ onLoginClick }) {
         
           {/* Desktop Navigation */}
       <div className="hidden md:flex items-center gap-10 action-label text-[10px] text-[#4A3224]/70">
-        <Link to="/" className="hover:text-[#D17B57] transition-all hover:scale-105 uppercase">Home</Link>
+        <Link to="/" onClick={() => window.scrollTo(0, 0)} className="hover:text-[#D17B57] transition-all hover:scale-105 uppercase">Home</Link>
         <a href="#collection" className="hover:text-[#D17B57] transition-all hover:scale-105 uppercase">Collection</a>
+
+        {toggleTheme && (
+          <button
+            onClick={toggleTheme}
+            className={`p-2 rounded-full transition-all ${
+              isDarkMode 
+                ? 'bg-[#1A1A1A] text-white hover:bg-[#2A2A2A]' 
+                : 'bg-white/80 text-[#4A3224] hover:bg-white shadow-sm'
+            }`}
+            title="Toggle Theme"
+          >
+            {isDarkMode ? (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+            )}
+          </button>
+        )}
             
             {user && profile ? (
               <button onClick={handleDashboardRedirect} className="action-label px-6 py-3 bg-[#4A3224] text-[#FDF8F5] rounded-full hover:bg-[#D17B57] transition-all shadow-lg hover:scale-105 active:scale-100">
@@ -88,8 +106,24 @@ export default function Navbar({ onLoginClick }) {
             )}
       </div>
 
-      {/* Mobile Menu Toggle Button */}
-      <div className="md:hidden flex items-center">
+      {/* Mobile Menu Toggle Button & Theme Toggle */}
+      <div className="md:hidden flex items-center gap-3">
+        {toggleTheme && (
+          <button
+            onClick={toggleTheme}
+            className={`p-2 rounded-full transition-all ${
+              isDarkMode 
+                ? 'bg-[#1A1A1A] text-white hover:bg-[#2A2A2A]' 
+                : 'bg-white/80 text-[#4A3224] hover:bg-white shadow-sm'
+            }`}
+          >
+            {isDarkMode ? (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+            ) : (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+            )}
+          </button>
+        )}
         <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-[#4A3224] focus:outline-none">
           <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d={isMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16m-7 6h7"} />
@@ -100,7 +134,7 @@ export default function Navbar({ onLoginClick }) {
       {/* Mobile Menu Overlay */}
       {isMenuOpen && (
         <div className="absolute top-[73px] left-0 w-full bg-white/95 backdrop-blur-md border-b border-[#4A3224]/10 shadow-xl flex flex-col p-6 gap-6 md:hidden reveal-up">
-          <Link to="/" onClick={() => setIsMenuOpen(false)} className="action-label text-xs text-[#6B5041] uppercase">HOME</Link>
+          <Link to="/" onClick={() => { setIsMenuOpen(false); window.scrollTo(0, 0); }} className="action-label text-xs text-[#6B5041] uppercase">HOME</Link>
           <a href="#collection" onClick={() => setIsMenuOpen(false)} className="action-label text-xs text-[#6B5041] uppercase">COLLECTION</a>
           
           <hr className="border-gray-100" />

@@ -46,11 +46,6 @@ export default function RiskProfile() {
     storm_surge: 'Safe'
   })
 
-  useEffect(() => {
-    fetchCurrentRole()
-    fetchWorkshopData()
-  }, [workshopId])
-
   const fetchCurrentRole = async () => {
     const { data: sessionData } = await supabase.auth.getSession()
     const sessionUserId = sessionData?.session?.user?.id
@@ -111,6 +106,12 @@ export default function RiskProfile() {
       setAssessmentHistory(historyRows || [])
     }
   }
+
+  useEffect(() => {
+    fetchCurrentRole()
+    fetchWorkshopData()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workshopId])
 
   const handleGetLiveLocation = () => {
     if (!navigator.geolocation) {
@@ -190,6 +191,8 @@ export default function RiskProfile() {
         ashfall: hazards.ashfall,
         landslide: hazards.landslide,
         storm_surge: hazards.storm_surge,
+        lat: position ? position[0] : null,
+        lng: position ? position[1] : null,
       },
     }
 

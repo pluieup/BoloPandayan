@@ -122,17 +122,17 @@ const LGUAdminDashboard = () => {
       />
 
       {/* Top Header Bar */}
-      <div className="bg-white border-b border-[#EAE0D5] px-8 py-4 flex justify-between items-center shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-[#1A2E35] rounded-lg flex items-center justify-center">
+      <div className="bg-white border-b border-[#EAE0D5] px-4 md:px-8 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-sm">
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-center sm:justify-start">
+          <div className="w-8 h-8 bg-[#1A2E35] rounded-lg flex items-center justify-center shrink-0">
             <span className="text-white text-[10px] font-black">LGU</span>
           </div>
-          <h1 className="text-sm font-black tracking-widest text-[#1A2E35] uppercase">
-            Bolo Pandayan <span className="text-[#D17B57] ml-2">Admin Portal</span>
+          <h1 className="text-sm sm:text-base font-black tracking-widest text-[#1A2E35] uppercase text-center sm:text-left">
+            Bolo Pandayan <span className="text-[#D17B57] sm:ml-2 block sm:inline">Admin Portal</span>
           </h1>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-center">
           <button
             onClick={handleViewPublicGallery}
             className="flex items-center gap-2 px-4 py-2 border border-[#EAE0D5] text-[#1A2E35] rounded-xl hover:bg-[#FDF8F5] transition-all font-bold text-[10px] tracking-widest uppercase"

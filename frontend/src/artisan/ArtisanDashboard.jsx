@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import UploadBoloModal from '../components/UploadBoloModal'
 import ProductCard from './ProductCard'
 import EditProfileModal from './EditProfileModal'
+import EditPersonalProfileModal from './EditPersonalProfileModal'
 import JoinWorkshopView from './JoinWorkshopView'
 
 export default function ArtisanDashboard() {
@@ -13,6 +14,7 @@ export default function ArtisanDashboard() {
   
   const [isUploadOpen, setIsUploadOpen] = useState(false)
   const [isProfileEditOpen, setIsProfileEditOpen] = useState(false)
+  const [isPersonalEditOpen, setIsPersonalEditOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState(null)
   const [myProducts, setMyProducts] = useState([])
 
@@ -61,10 +63,8 @@ export default function ArtisanDashboard() {
   }
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-[#FDF8F5]">
-      <div className="text-[#4A3224] font-serif animate-pulse tracking-widest uppercase font-black">
-        Loading Storefront...
-      </div>
+    <div className="h-screen flex items-center justify-center bg-[#0A0A0A] text-[#FDF8F5]">
+      <p className="action-label loading-pulse text-[11px]">Loading Storefront...</p>
     </div>
   )
 
@@ -103,9 +103,9 @@ export default function ArtisanDashboard() {
         </div>
         
         <div className="flex items-center gap-4 sm:gap-6">
-            <Link to="/" className="text-[10px] font-black tracking-widest text-gray-500 hover:text-[#D17B57] transition-colors uppercase hidden sm:flex items-center gap-2">
+            <Link to="/" className="text-[10px] font-black tracking-widest text-gray-500 hover:text-[#D17B57] transition-colors uppercase flex items-center gap-2" title="View Public Site">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
-                View Public Site
+                <span className="hidden sm:inline">View Public Site</span>
             </Link>
             
             <div className="flex items-center gap-3 pl-4 border-l border-gray-300">
@@ -127,27 +127,36 @@ export default function ArtisanDashboard() {
         
         <div className="absolute inset-0 bg-gradient-to-t from-[#FDF8F5] via-[#2A1F1A]/20 to-transparent"></div>
 
-        <div className="absolute bottom-0 left-0 w-full p-8 md:p-16 pt-20 flex justify-between items-end">
+        <div className="absolute bottom-0 left-0 w-full p-6 sm:p-8 md:p-16 pt-20 flex flex-col sm:flex-row justify-end sm:justify-between items-start sm:items-end gap-4">
             <div>
-                <h2 className="text-4xl md:text-6xl font-black text-white font-serif uppercase tracking-tight drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] mb-2">
+                <h2 className="text-3xl sm:text-4xl md:text-6xl font-black text-white font-serif uppercase tracking-tight drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] mb-2">
                     {profile?.shop_name || 'My Pandayan'}
                 </h2>
-                <p className="text-gray-200 font-black text-xs tracking-[0.3em] uppercase flex items-center gap-2 drop-shadow-md">
+                <p className="text-gray-200 font-black text-[10px] sm:text-xs tracking-[0.3em] uppercase flex items-center gap-2 drop-shadow-md">
                     <svg className="w-4 h-4 text-[#D17B57]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                     {profile?.shop_address || 'Loay, Bohol'}
                 </p>
-                <p className="mt-4 max-w-2xl text-[#FDF8F5] text-sm leading-relaxed drop-shadow-md">
+                <p className="mt-2 sm:mt-4 max-w-2xl text-[#FDF8F5] text-xs sm:text-sm leading-relaxed drop-shadow-md line-clamp-2 sm:line-clamp-none">
                     {profile?.shop_description || 'Add your workshop description from Edit Shop Details to tell visitors about your craft.'}
                 </p>
             </div>
             
-            <button 
-                onClick={() => setIsProfileEditOpen(true)}
-                className="px-6 py-3 bg-white/90 backdrop-blur text-[#4A3224] border border-[#EAE0D5] rounded-xl text-[10px] font-black tracking-widest hover:bg-[#D17B57] hover:text-white transition-all shadow-lg uppercase flex items-center gap-2"
-            >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                Edit Shop Details
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3">
+                <button 
+                    onClick={() => setIsPersonalEditOpen(true)}
+                    className="px-4 sm:px-6 py-2 sm:py-3 bg-white/90 backdrop-blur text-[#4A3224] border border-[#EAE0D5] rounded-xl text-[10px] font-black tracking-widest hover:bg-[#D17B57] hover:text-white transition-all shadow-lg uppercase flex items-center justify-center gap-2"
+                >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                    Edit Personal Profile
+                </button>
+                <button 
+                    onClick={() => setIsProfileEditOpen(true)}
+                    className="px-4 sm:px-6 py-2 sm:py-3 bg-[#4A3224]/90 backdrop-blur text-white border border-[#4A3224] rounded-xl text-[10px] font-black tracking-widest hover:bg-[#D17B57] hover:border-[#D17B57] transition-all shadow-lg uppercase flex items-center justify-center gap-2"
+                >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                    Edit Shop Details
+                </button>
+            </div>
         </div>
       </header>
 
@@ -222,6 +231,13 @@ export default function ArtisanDashboard() {
       <EditProfileModal 
         isOpen={isProfileEditOpen}
         onClose={() => setIsProfileEditOpen(false)}
+        profile={profile}
+        onSaveSuccess={fetchProfile}
+      />
+
+      <EditPersonalProfileModal 
+        isOpen={isPersonalEditOpen}
+        onClose={() => setIsPersonalEditOpen(false)}
         profile={profile}
         onSaveSuccess={fetchProfile}
       />

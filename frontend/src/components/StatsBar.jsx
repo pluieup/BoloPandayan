@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../supabaseClient'
 
-export default function StatsBar() {
+export default function StatsBar({ isDarkMode }) {
   const [stats, setStats] = useState({
     pandays: 0,
     workshops: 0,
@@ -78,7 +78,7 @@ export default function StatsBar() {
   return (
     <div 
       ref={domRef}
-      className={`relative z-30 bg-[#0A0A0A] py-16 px-6 sm:px-12 border-y border-white/5 transition-all duration-1000 ease-out transform ${
+      className={`relative z-30 bg-transparent py-16 px-6 sm:px-12 transition-all duration-1000 ease-out transform ${
         isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
       }`}
     >
@@ -86,46 +86,46 @@ export default function StatsBar() {
         
         {/* STAT 1: REGISTERED PANDAYS */}
         <div className="flex items-center gap-5 min-w-[180px]">
-          <span className="text-5xl md:text-7xl font-black text-white font-serif leading-none">
+          <span className={`text-5xl md:text-7xl font-black ${isDarkMode ? 'text-white' : 'text-[#4A3224]'} font-serif leading-none`}>
             {stats.pandays}
           </span>
-          <div className="text-[9px] font-black text-gray-500 tracking-[0.3em] leading-relaxed uppercase">
+          <div className={`text-[9px] font-black ${isDarkMode ? 'text-gray-500' : 'text-[#4A3224]/70'} tracking-[0.3em] leading-relaxed uppercase`}>
             Registered<br/>Pandays
           </div>
         </div>
         
-        <Divider />
+        <Divider isDarkMode={isDarkMode} />
 
         {/* STAT 2: ACTIVE WORKSHOPS */}
         <div className="flex items-center gap-5 min-w-[180px]">
-          <span className="text-5xl md:text-7xl font-black text-white font-serif leading-none">
+          <span className={`text-5xl md:text-7xl font-black ${isDarkMode ? 'text-white' : 'text-[#4A3224]'} font-serif leading-none`}>
             {stats.workshops}
           </span>
-          <div className="text-[9px] font-black text-gray-500 tracking-[0.3em] leading-relaxed uppercase">
+          <div className={`text-[9px] font-black ${isDarkMode ? 'text-gray-500' : 'text-[#4A3224]/70'} tracking-[0.3em] leading-relaxed uppercase`}>
             Active<br/>Workshops
           </div>
         </div>
         
-        <Divider />
+        <Divider isDarkMode={isDarkMode} />
 
         {/* STAT 3: HERITAGE ITEMS */}
         <div className="flex items-center gap-5 min-w-[180px]">
-          <span className="text-5xl md:text-7xl font-black text-white font-serif leading-none">
+          <span className={`text-5xl md:text-7xl font-black ${isDarkMode ? 'text-white' : 'text-[#4A3224]'} font-serif leading-none`}>
             {stats.items}
           </span>
-          <div className="text-[9px] font-black text-gray-500 tracking-[0.3em] leading-relaxed uppercase">
+          <div className={`text-[9px] font-black ${isDarkMode ? 'text-gray-500' : 'text-[#4A3224]/70'} tracking-[0.3em] leading-relaxed uppercase`}>
             Heritage<br/>Items
           </div>
         </div>
         
-        <Divider />
+        <Divider isDarkMode={isDarkMode} />
 
         {/* STAT 4: PERCENTAGE (ORANGE) */}
         <div className="flex items-center gap-5 min-w-[180px]">
           <span className="text-5xl md:text-7xl font-black text-[#D17B57] font-serif leading-none">
             {stats.assessed}%
           </span>
-          <div className="text-[9px] font-black text-gray-500 tracking-[0.3em] leading-relaxed uppercase">
+          <div className={`text-[9px] font-black ${isDarkMode ? 'text-gray-500' : 'text-[#4A3224]/70'} tracking-[0.3em] leading-relaxed uppercase`}>
             Workshops<br/>Assessed
           </div>
         </div>
@@ -135,6 +135,6 @@ export default function StatsBar() {
   )
 }
 
-function Divider() {
-  return <div className="hidden lg:block w-px h-16 bg-white/10 mx-4"></div>
+function Divider({ isDarkMode }) {
+  return <div className={`hidden lg:block w-px h-16 ${isDarkMode ? 'bg-white/10' : 'bg-[#4A3224]/10'} mx-4`}></div>
 }

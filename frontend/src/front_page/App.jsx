@@ -27,13 +27,17 @@ function LoadingScreen() {
 }
 
 function Home({ onLoginOpen }) {
+  const [isDarkMode, setIsDarkMode] = useState(true)
+
+  const toggleTheme = () => setIsDarkMode(!isDarkMode)
+
   return (
-<div className="bg-[#0A0A0A] min-h-screen"> 
-      <Navbar onLoginClick={onLoginOpen} />
-      <Hero />
-      <StatsBar /> 
-      <WorkshopList />
-      <CollectionGallery />
+    <div className={`${isDarkMode ? 'bg-[#0A0A0A]' : 'bg-[#FDF8F5]'} min-h-screen transition-colors duration-700`}> 
+      <Navbar onLoginClick={onLoginOpen} isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
+      <Hero isDarkMode={isDarkMode} />
+      <StatsBar isDarkMode={isDarkMode} /> 
+      <WorkshopList isDarkMode={isDarkMode} />
+      <CollectionGallery isDarkMode={isDarkMode} />
     </div>
     )
 }

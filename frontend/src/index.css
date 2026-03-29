@@ -62,3 +62,22 @@ body {
 	animation: pulse 1.2s ease-in-out infinite;
 }
 
+/* Custom Scrollbar styled for the theme */
+::-webkit-scrollbar {
+	width: 6px;
+	height: 6px;
+}
+
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+	background: rgba(209, 123, 87, 0.4);
+	border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: rgba(209, 123, 87, 0.8);
+}
+

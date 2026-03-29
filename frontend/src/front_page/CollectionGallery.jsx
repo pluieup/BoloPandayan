@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import ProjectCard from '../components/ProjectCard'
 
-export default function CollectionGallery() {
+export default function CollectionGallery({ isDarkMode }) {
   const [products, setProducts] = useState([])
 
   useEffect(() => {
@@ -20,16 +20,16 @@ export default function CollectionGallery() {
 
   if (products.length === 0) {
     return (
-      <section className="py-32 bg-[#121212] text-center border-t border-white/5">
-        <p className="text-[#EAE0D5]/50 font-serif italic text-lg">The digital collection is currently being curated...</p>
+      <section className={`py-32 text-center bg-transparent transition-colors duration-700`}>
+        <p className={`font-serif italic text-lg ${isDarkMode ? 'text-[#EAE0D5]/50' : 'text-[#4A3224]/50'}`}>The digital collection is currently curated...</p>
       </section>
     )
   }
 
   return (
-    <section id="collection" className="bg-[#121212] py-32 px-6 md:px-12 border-t border-white/5 relative">
+    <section id="collection" className={`py-32 px-6 md:px-12 relative bg-transparent transition-colors duration-700`}>
       <div className="max-w-7xl mx-auto mb-20 flex flex-col items-center text-center">
-        <h2 className="text-4xl md:text-5xl font-black text-[#FDF8F5] font-serif uppercase tracking-widest mb-6 drop-shadow-lg">
+        <h2 className={`text-4xl md:text-5xl font-black font-serif uppercase tracking-widest mb-6 drop-shadow-lg transition-colors duration-700 ${isDarkMode ? 'text-[#FDF8F5]' : 'text-[#4A3224]'}`}>
           Products
         </h2>
         
@@ -44,7 +44,8 @@ export default function CollectionGallery() {
             key={item.id}
             id={item.id}
             name={item.name}
-            image={item.image_url} 
+            image={item.image_url}
+            isDarkMode={isDarkMode}
           />
         ))}
       </div>
