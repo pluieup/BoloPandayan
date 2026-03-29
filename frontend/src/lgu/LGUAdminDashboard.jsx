@@ -124,32 +124,33 @@ const LGUAdminDashboard = () => {
       {/* Top Header Bar */}
       <div className="bg-white border-b border-[#EAE0D5] px-4 md:px-8 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-sm">
         <div className="flex items-center gap-3 w-full sm:w-auto justify-center sm:justify-start">
-          <div className="w-8 h-8 bg-[#1A2E35] rounded-lg flex items-center justify-center shrink-0">
-            <span className="text-white text-[10px] font-black">LGU</span>
+          <div className="w-10 h-10 shrink-0 overflow-hidden">
+            <img src="/assets/Loay.png" alt="Loay Seal" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-sm sm:text-base font-black tracking-widest text-[#1A2E35] uppercase text-center sm:text-left">
             Bolo Pandayan <span className="text-[#D17B57] sm:ml-2 block sm:inline">Admin Portal</span>
           </h1>
         </div>
         
-        <div className="flex items-center gap-2 w-full sm:w-auto justify-center">
+        <div className="flex items-center gap-4 sm:gap-6 w-full sm:w-auto justify-center">
           <button
             onClick={handleViewPublicGallery}
-            className="flex items-center gap-2 px-4 py-2 border border-[#EAE0D5] text-[#1A2E35] rounded-xl hover:bg-[#FDF8F5] transition-all font-bold text-[10px] tracking-widest uppercase"
+            className="text-[10px] font-black tracking-widest text-gray-500 hover:text-[#D17B57] transition-colors uppercase flex items-center gap-2" title="View Public Site"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
-            View Public Gallery
+            <span className="hidden sm:inline">View Public Site</span>
           </button>
 
-          <button 
-            onClick={handleLogout}
-            className="flex items-center gap-2 px-4 py-2 border border-red-100 text-red-600 rounded-xl hover:bg-red-50 transition-all font-bold text-[10px] tracking-widest uppercase"
-          >
-            Logout
-          </button>
+          <div className="flex items-center pl-4 border-l border-gray-300">
+            <button 
+              onClick={handleLogout}
+              className="text-gray-400 hover:text-red-500 transition-colors" title="Logout"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+            </button>
+          </div>
         </div>
       </div>
 
