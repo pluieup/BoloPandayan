@@ -1,17 +1,27 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabaseClient'
 
-export default function EditProfileModal({ isOpen, onClose, profile, onSaveSuccess }) {
-  const [formData, setFormData] = useState({ ...profile })
+export default function EditProfileModal({ isOpen, onClose, workshop, onSaveSuccess }) {
+  const [formData, setFormData] = useState({
+    name: workshop?.name || '',
+    address: workshop?.address || '',
+    description: workshop?.description || '',
+    banner_url: workshop?.banner_url || ''
+  })
   const [bannerFile, setBannerFile] = useState(null)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
-      setFormData({ ...profile })
+      setFormData({
+        name: workshop?.name || '',
+        address: workshop?.address || '',
+        description: workshop?.description || '',
+        banner_url: workshop?.banner_url || ''
+      })
       setBannerFile(null)
     }
-  }, [isOpen, profile])
+  }, [isOpen, workshop])
 
   if (!isOpen) return null
 
@@ -25,7 +35,7 @@ export default function EditProfileModal({ isOpen, onClose, profile, onSaveSucce
       if (bannerFile) {
         const fileExt = bannerFile.name.split('.').pop()
         const fileName = `banner_${Math.random()}.${fileExt}`
-        const filePath = `${profile.id}/${fileName}`
+        const filePath = `${workshop.id}/${fileName}`
 
         const { error: uploadError } = await supabase.storage.from('bolos').upload(filePath, bannerFile)
         if (uploadError) throw uploadError
@@ -35,15 +45,14 @@ export default function EditProfileModal({ isOpen, onClose, profile, onSaveSucce
       }
 
       const { error } = await supabase
-        .from('tbl_user_profiles')
+        .from('tbl_workshops')
         .update({
-          full_name: formData.full_name,
-          shop_name: formData.shop_name,
-          shop_address: formData.shop_address,
-          shop_description: formData.shop_description,
+          name: formData.name,
+          address: formData.address,
+          description: formData.description,
           banner_url: finalBannerUrl
         })
-        .eq('id', profile.id)
+        .eq('id', workshop.id)
 
       if (error) throw error
 
@@ -78,24 +87,20 @@ export default function EditProfileModal({ isOpen, onClose, profile, onSaveSucce
           </div>
 
           <div>
-            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Artisan Name</label>
-            <input required type="text" value={formData.full_name || ''} onChange={e => setFormData({ ...formData, full_name: e.target.value })} className="w-full bg-white border border-[#EAE0D5] rounded-2xl px-5 py-3 text-sm focus:outline-none focus:border-[#D17B57]" />
-          </div>
-          <div>
             <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Workshop Name</label>
-            <input required type="text" value={formData.shop_name || ''} onChange={e => setFormData({ ...formData, shop_name: e.target.value })} className="w-full bg-white border border-[#EAE0D5] rounded-2xl px-5 py-3 text-sm focus:outline-none focus:border-[#D17B57]" />
+            <input required type="text" value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full bg-white border border-[#EAE0D5] rounded-2xl px-5 py-3 text-sm focus:outline-none focus:border-[#D17B57]" />
           </div>
           <div>
             <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Location</label>
-            <input required type="text" value={formData.shop_address || ''} onChange={e => setFormData({ ...formData, shop_address: e.target.value })} className="w-full bg-white border border-[#EAE0D5] rounded-2xl px-5 py-3 text-sm focus:outline-none focus:border-[#D17B57]" />
+            <input required type="text" value={formData.address || ''} onChange={e => setFormData({ ...formData, address: e.target.value })} className="w-full bg-white border border-[#EAE0D5] rounded-2xl px-5 py-3 text-sm focus:outline-none focus:border-[#D17B57]" />
           </div>
           <div>
             <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Workshop Description</label>
             <textarea
               rows={4}
               placeholder="Share your workshop story and craft tradition..."
-              value={formData.shop_description || ''}
-              onChange={e => setFormData({ ...formData, shop_description: e.target.value })}
+              value={formData.description || ''}
+              onChange={e => setFormData({ ...formData, description: e.target.value })}
               className="w-full bg-white border border-[#EAE0D5] rounded-2xl px-5 py-3 text-sm focus:outline-none focus:border-[#D17B57] resize-none"
             />
           </div>

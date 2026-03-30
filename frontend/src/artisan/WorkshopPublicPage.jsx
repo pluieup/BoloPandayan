@@ -44,7 +44,7 @@ export default function WorkshopPublicPage() {
 
       const { data: workshopData, error: workshopError } = await supabase
         .from('tbl_workshops')
-        .select('id, name, address, banner_url, owner_id, created_at, safety_score, lat, lng')
+        .select('id, name, address, description, banner_url, owner_id, created_at, safety_score, lat, lng')
         .eq('id', workshopId)
         .maybeSingle()
 
@@ -66,7 +66,7 @@ export default function WorkshopPublicPage() {
 
       const { data: artisanData, error: artisanError } = await supabase
         .from('tbl_user_profiles')
-        .select('id, full_name, shop_name, shop_address, shop_description, banner_url, workshop_id, account_status, profile_photo_url, bio')
+        .select('id, full_name, workshop_id, account_status, profile_photo_url, bio')
         .eq('role', 'artisan')
         .eq('workshop_id', workshopId)
         .in('account_status', ['approved', 'Approved'])
@@ -76,13 +76,11 @@ export default function WorkshopPublicPage() {
         setArtisans(artisanData || [])
       }
 
-      const artisanIds = (artisanData || []).map((artisan) => artisan.id)
-
-      if (artisanIds.length > 0) {
+      if ((artisanData || []).length > 0) {
         const { data: productData, error: productError } = await supabase
           .from('tbl_products')
           .select('id, name, image_url, price, description, blade_material, handle_material, workshop_id, created_at')
-          .in('workshop_id', artisanIds)
+          .eq('workshop_id', workshopId)
           .order('created_at', { ascending: false })
 
         if (!productError) {
@@ -100,24 +98,22 @@ export default function WorkshopPublicPage() {
 
   const primaryArtisan = artisans[0] || null
 
+// Pull directly from the workshop Source of Truth
   const title = useMemo(() => {
-    return primaryArtisan?.shop_name || workshop?.name || 'Workshop'
-  }, [primaryArtisan, workshop])
+    return workshop?.name || 'Workshop'
+  }, [workshop])
 
   const address = useMemo(() => {
-    return primaryArtisan?.shop_address || workshop?.address || 'Address not available'
-  }, [primaryArtisan, workshop])
+    return workshop?.address || 'Address not available'
+  }, [workshop])
 
   const description = useMemo(() => {
-    return (
-      primaryArtisan?.shop_description ||
-      'No workshop description has been published yet.'
-    )
-  }, [primaryArtisan])
+    return workshop?.description || 'No workshop description has been published yet.'
+  }, [workshop])
 
   const bannerUrl = useMemo(() => {
-    return primaryArtisan?.banner_url || workshop?.banner_url || '/assets/Background.png'
-  }, [primaryArtisan, workshop])
+    return workshop?.banner_url || '/assets/Background.png'
+  }, [workshop])
 
   const riskScore = useMemo(() => {
     if (latestRiskRecord?.risk_score !== null && latestRiskRecord?.risk_score !== undefined) {
@@ -221,7 +217,7 @@ export default function WorkshopPublicPage() {
 
           <div className="mt-12 pt-8 border-t border-[#D17B57]/20 flex flex-col gap-4">
             <div className="flex flex-col sm:flex-row gap-4">
-              {(userRole === 'admin' || userRole === 'developer') && (
+              {(userRole === 'lgu_admin' || userRole === 'developer') && (
                 <Link
                   to={`/risk-profile/${workshop.id}`}
                   className="action-label flex-1 inline-flex items-center justify-center gap-3 py-4 px-6 bg-white border border-[#D17B57]/30 text-[#D17B57] rounded-full text-[10px] hover:bg-[#D17B57] hover:text-white hover:scale-[1.02] transition-all shadow-sm"

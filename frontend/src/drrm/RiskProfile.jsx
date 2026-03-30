@@ -241,7 +241,7 @@ export default function RiskProfile() {
   }
 
   const defaultCenter = [9.6015, 124.0150]
-  const isEditable = userRole === 'admin' || userRole === 'developer'
+  const isEditable = userRole === 'lgu_admin' || userRole === 'developer'
 
   const hazardRiskSummary = useMemo(() => {
     const keys = [

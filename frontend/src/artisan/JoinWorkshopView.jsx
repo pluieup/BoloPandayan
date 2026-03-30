@@ -18,24 +18,20 @@ export default function JoinWorkshopView({ profile, onRefresh }) {
     fetchShops()
   }, [])
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
 
     try {
       let finalWorkshopId = selectedId
-      let finalShopName = null
-      let finalShopAddress = null
-      let finalShopDescription = null
 
+      // 1. JOINING EXISTING WORKSHOP
       if (!isCreating) {
         const selectedWorkshop = workshops.find(ws => ws.id === selectedId)
         if (!selectedWorkshop) throw new Error('Please select a valid workshop.')
-        finalShopName = selectedWorkshop.name || null
-        finalShopAddress = selectedWorkshop.address || null
-        finalShopDescription = selectedWorkshop.description || profile.shop_description || null
       }
 
+      // 2. CREATING A NEW WORKSHOP
       if (isCreating) {
         let bannerUrl = null
         if (bannerFile) {
@@ -47,13 +43,15 @@ export default function JoinWorkshopView({ profile, onRefresh }) {
           bannerUrl = urlData.publicUrl
         }
 
+        // Target the workshops table as the absolute Source of Truth
         const { data: newWS, error: wsError } = await supabase
           .from('tbl_workshops')
           .insert([{
             name: shopData.name,
             address: shopData.address,
+            description: shopData.description, // <-- Added this to save to the workshop!
             banner_url: bannerUrl,
-            owner_id: profile.id
+            owner_id: profile.id               // <-- The owner is securely set here
           }])
           .select()
           .single()
@@ -61,19 +59,14 @@ export default function JoinWorkshopView({ profile, onRefresh }) {
         if (wsError) throw wsError
 
         finalWorkshopId = newWS.id
-        finalShopName = newWS.name || shopData.name || null
-        finalShopAddress = newWS.address || shopData.address || null
-        finalShopDescription = newWS.description || shopData.description || null
       }
 
+      // 3. UPDATE THE ARTISAN'S PROFILE
+      // Only link the artisan to a workshop. Sensitive account fields are managed by LGU/developer flows.
       const { error: profileError } = await supabase
         .from('tbl_user_profiles')
         .update({
-          workshop_id: finalWorkshopId,
-          shop_name: finalShopName,
-          shop_address: finalShopAddress,
-          shop_description: finalShopDescription,
-          account_status: 'pending_approval'
+          workshop_id: finalWorkshopId
         })
         .eq('id', profile.id)
 

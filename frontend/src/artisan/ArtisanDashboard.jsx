@@ -17,6 +17,7 @@ export default function ArtisanDashboard() {
   const [isPersonalEditOpen, setIsPersonalEditOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState(null)
   const [myProducts, setMyProducts] = useState([])
+  const [myWorkshop, setMyWorkshop] = useState(null)
 
   useEffect(() => {
     fetchProfile()
@@ -46,13 +47,28 @@ export default function ArtisanDashboard() {
 
         setProfile(profileData)
 
-    const { data: productData } = await supabase
-      .from('tbl_products')
-      .select('*')
-      .eq('workshop_id', user.id)
-      .order('created_at', { ascending: false })
+        // Fetch the workshop data to check ownership
+    if (profileData.workshop_id) {
+      const { data: workshopData } = await supabase
+        .from('tbl_workshops')
+        .select('*')
+        .eq('id', profileData.workshop_id)
+        .single()
+        
+      if (workshopData) setMyWorkshop(workshopData)
+    }
 
-    if (productData) setMyProducts(productData)
+    let productData = []
+    if (profileData.workshop_id) {
+      const { data } = await supabase
+        .from('tbl_products')
+        .select('*')
+        .eq('workshop_id', profileData.workshop_id)
+        .order('created_at', { ascending: false })
+      productData = data || []
+    }
+
+    setMyProducts(productData)
 
     setLoading(false)
   }
@@ -69,21 +85,26 @@ export default function ArtisanDashboard() {
   )
 
     const normalizedStatus = (profile?.account_status || '').toLowerCase()
+    const hasSubmittedWorkshop = normalizedStatus === 'pending' && !!profile?.workshop_id
 
-    if (normalizedStatus === 'pending') {
-    return <JoinWorkshopView profile={profile} onRefresh={fetchProfile} />
-  }
+    if (normalizedStatus === 'pending' && !hasSubmittedWorkshop) {
+      return <JoinWorkshopView profile={profile} onRefresh={fetchProfile} />
+    }
 
-    if (normalizedStatus === 'pending_approval') {
+    if (hasSubmittedWorkshop || normalizedStatus === 'pending_approval') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0A0A0A] p-6 text-center">
         <div className="max-w-md bg-white/10 backdrop-blur-xl p-10 rounded-[2.5rem] border border-white/20">
           <div className="w-16 h-16 bg-[#D17B57]/20 rounded-full flex items-center justify-center mx-auto mb-6">
             <svg className="w-8 h-8 text-[#D17B57] animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           </div>
-          <h2 className="text-2xl font-black text-white uppercase mb-4 tracking-widest">Verification Pending</h2>
+          <h2 className="text-2xl font-black text-white uppercase mb-4 tracking-widest">
+            {hasSubmittedWorkshop ? 'Submission Received' : 'Verification Pending'}
+          </h2>
           <p className="text-gray-400 text-xs uppercase tracking-widest leading-relaxed">
-            The LGU Admin is currently reviewing your profile and workshop application. You will be notified once you are approved to publish products.
+            {hasSubmittedWorkshop
+              ? 'Your pandayan setup has been submitted. Please wait while the LGU Admin reviews your profile and workshop application.'
+              : 'The LGU Admin is currently reviewing your profile and workshop application. You will be notified once you are approved to publish products.'}
           </p>
           <button onClick={handleLogout} className="mt-8 text-[10px] font-black text-[#D17B57] uppercase tracking-widest hover:underline">Sign Out</button>
         </div>
@@ -123,10 +144,10 @@ export default function ArtisanDashboard() {
         </div>
       </nav>
 
-      <header className="relative h-72 md:h-96 bg-[#2A1F1A] overflow-hidden group">
+<header className="relative h-72 md:h-96 bg-[#2A1F1A] overflow-hidden group">
         <div 
             className="absolute inset-0 bg-cover bg-center opacity-60 transition-opacity group-hover:opacity-50"
-            style={{ backgroundImage: `url(${profile?.banner_url || '/assets/Background.png'})` }}
+            style={{ backgroundImage: `url(${myWorkshop?.banner_url || '/assets/Background.png'})` }}
         ></div>
         
         <div className="absolute inset-0 bg-gradient-to-t from-[#FDF8F5] via-[#2A1F1A]/20 to-transparent"></div>
@@ -134,17 +155,17 @@ export default function ArtisanDashboard() {
         <div className="absolute bottom-0 left-0 w-full p-6 sm:p-8 md:p-16 pt-20 flex flex-col sm:flex-row justify-end sm:justify-between items-start sm:items-end gap-4">
             <div>
                 <h2 className="text-3xl sm:text-4xl md:text-6xl font-black text-white font-serif uppercase tracking-tight drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] mb-2">
-                    {profile?.shop_name || 'My Pandayan'}
+                    {myWorkshop?.name || 'My Pandayan'}
                 </h2>
                 <p className="text-gray-200 font-black text-[10px] sm:text-xs tracking-[0.3em] uppercase flex items-center gap-2 drop-shadow-md">
                     <svg className="w-4 h-4 text-[#D17B57]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                    {profile?.shop_address || 'Loay, Bohol'}
+                    {myWorkshop?.address || 'Loay, Bohol'}
                 </p>
                 <p className="mt-2 sm:mt-4 max-w-2xl text-[#FDF8F5] text-xs sm:text-sm leading-relaxed drop-shadow-md line-clamp-2 sm:line-clamp-none">
-                    {profile?.shop_description || 'Add your workshop description from Edit Shop Details to tell visitors about your craft.'}
+                    {myWorkshop?.description || 'Add your workshop description from Edit Shop Details to tell visitors about your craft.'}
                 </p>
             </div>
-            
+                        
             <div className="flex flex-col sm:flex-row gap-3">
                 <button 
                     onClick={() => setIsPersonalEditOpen(true)}
@@ -153,6 +174,9 @@ export default function ArtisanDashboard() {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                     Edit Personal Profile
                 </button>
+
+                {/* Only show if the logged-in user is the owner of the workshop */}
+                {myWorkshop?.owner_id === profile?.id && (
                 <button 
                     onClick={() => setIsProfileEditOpen(true)}
                     className="px-4 sm:px-6 py-2 sm:py-3 bg-[#4A3224]/90 backdrop-blur text-white border border-[#4A3224] rounded-xl text-[10px] font-black tracking-widest hover:bg-[#D17B57] hover:border-[#D17B57] transition-all shadow-lg uppercase flex items-center justify-center gap-2"
@@ -160,6 +184,7 @@ export default function ArtisanDashboard() {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                     Edit Shop Details
                 </button>
+                )}
             </div>
         </div>
       </header>
@@ -227,7 +252,7 @@ export default function ArtisanDashboard() {
           setIsUploadOpen(false)
           setEditingProduct(null)
         }}
-        artisanId={profile?.id}
+        workshopId={myWorkshop?.id}
         onUploadSuccess={fetchProfile}
         editingProduct={editingProduct}
       />
@@ -235,9 +260,9 @@ export default function ArtisanDashboard() {
       <EditProfileModal 
         isOpen={isProfileEditOpen}
         onClose={() => setIsProfileEditOpen(false)}
-        profile={profile}
+        workshop={myWorkshop} 
         onSaveSuccess={fetchProfile}
-      />
+              />
 
       <EditPersonalProfileModal 
         isOpen={isPersonalEditOpen}

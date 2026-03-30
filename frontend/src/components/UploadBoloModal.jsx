@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
 
-export default function UploadBoloModal({ isOpen, onClose, artisanId, onUploadSuccess, editingProduct = null }) {
+export default function UploadBoloModal({ isOpen, onClose, workshopId, onUploadSuccess, editingProduct = null }) {
   const [name, setName] = useState('')
   const [blade, setBlade] = useState('')
   const [handle, setHandle] = useState('')
@@ -9,6 +9,12 @@ export default function UploadBoloModal({ isOpen, onClose, artisanId, onUploadSu
   const [description, setDescription] = useState('')
   const [imageFile, setImageFile] = useState(null)
   const [uploading, setUploading] = useState(false)
+  const [feedbackModal, setFeedbackModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    isError: false
+  })
 
   // THE MAGIC: Pre-fill fields if we are in "Edit Mode"
   useEffect(() => {
@@ -44,7 +50,7 @@ export default function UploadBoloModal({ isOpen, onClose, artisanId, onUploadSu
       if (imageFile) {
         const fileExt = imageFile.name.split('.').pop()
         const fileName = `${Math.random()}.${fileExt}`
-        const filePath = `${artisanId}/${fileName}`
+        const filePath = `${workshopId}/${fileName}`
 
         const { error: uploadError } = await supabase.storage.from('bolos').upload(filePath, imageFile)
         if (uploadError) throw uploadError
@@ -55,6 +61,7 @@ export default function UploadBoloModal({ isOpen, onClose, artisanId, onUploadSu
 
       // We need an image URL to proceed (either the old one or the newly uploaded one)
       if (!imageUrl) throw new Error("Please upload a photo of the bolo.")
+      if (!workshopId) throw new Error('Please join or create a workshop first.')
 
       const productData = {
         name,
@@ -63,7 +70,7 @@ export default function UploadBoloModal({ isOpen, onClose, artisanId, onUploadSu
         price: parseFloat(price) || 0,
         description,
         image_url: imageUrl,
-        workshop_id: artisanId
+        workshop_id: workshopId
       }
 
       if (editingProduct) {
@@ -77,9 +84,21 @@ export default function UploadBoloModal({ isOpen, onClose, artisanId, onUploadSu
       }
 
       onUploadSuccess()
-      onClose()
+      setFeedbackModal({
+        isOpen: true,
+        title: editingProduct ? 'Masterwork Updated' : 'Masterwork Published',
+        message: editingProduct
+          ? 'Your product changes were saved successfully.'
+          : 'Your bolo was published successfully and is now visible in your workshop collection.',
+        isError: false
+      })
     } catch (err) {
-      alert(err.message)
+      setFeedbackModal({
+        isOpen: true,
+        title: 'Publish Failed',
+        message: err.message || 'Something went wrong while saving your product.',
+        isError: true
+      })
     } finally {
       setUploading(false)
     }
@@ -145,6 +164,30 @@ export default function UploadBoloModal({ isOpen, onClose, artisanId, onUploadSu
           </button>
         </div>
       </form>
+
+      {feedbackModal.isOpen && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="relative z-10 w-full max-w-sm bg-white rounded-3xl p-8 shadow-2xl border border-[#EAE0D5] text-center">
+            <div className={`w-14 h-14 mx-auto mb-4 rounded-full flex items-center justify-center ${feedbackModal.isError ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+              {feedbackModal.isError ? '!' : '✓'}
+            </div>
+            <h3 className="text-xl font-black text-[#4A3224] uppercase tracking-wider mb-3">{feedbackModal.title}</h3>
+            <p className="text-sm text-gray-600 leading-relaxed">{feedbackModal.message}</p>
+            <button
+              type="button"
+              onClick={() => {
+                const shouldClose = !feedbackModal.isError
+                setFeedbackModal({ isOpen: false, title: '', message: '', isError: false })
+                if (shouldClose) onClose()
+              }}
+              className={`mt-6 w-full py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-colors ${feedbackModal.isError ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-[#4A3224] text-white hover:bg-[#D17B57]'}`}
+            >
+              {feedbackModal.isError ? 'Close' : 'Done'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

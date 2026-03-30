@@ -15,6 +15,7 @@ export default function ArtisanDirectoryTable({ artisans, updatingId, normalizeS
           {artisans.map((artisan) => {
             const normalizedStatus = normalizeStatus(artisan.account_status)
             const isUpdating = updatingId === artisan.id
+            const isReviewable = normalizedStatus === 'pending' || normalizedStatus === 'pending_approval'
 
             return (
               <tr key={artisan.id} className="hover:bg-gray-50/50 transition-colors">
@@ -56,7 +57,7 @@ export default function ArtisanDirectoryTable({ artisans, updatingId, normalizeS
                 </td>
 
                 <td className="px-8 py-5 text-right space-x-2">
-                  {normalizedStatus === 'pending_approval' && (
+                  {isReviewable && (
                     <>
                       <button
                         disabled={isUpdating}

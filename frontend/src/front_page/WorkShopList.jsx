@@ -6,57 +6,48 @@ export default function WorkshopList({ isDarkMode }) {
   const [workshops, setWorkshops] = useState([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+useEffect(() => {
     const fetchWorkshops = async () => {
-      // Added banner_url to the select query so we can use it in the UI
-      const { data, error } = await supabase
-        .from('tbl_user_profiles')
-        .select('id, full_name, shop_name, shop_address, shop_description, workshop_id, banner_url')
-        .eq('role', 'artisan')
-        .or('is_approved.eq.true,account_status.eq.approved,account_status.eq.Approved')
-        .not('workshop_id', 'is', null)
-        .not('shop_name', 'is', null)
+      // 1. Fetch the actual workshops as the Source of Truth
+      const { data: workshopsData, error: wsError } = await supabase
+        .from('tbl_workshops')
+        .select('id, name, address, description, banner_url')
+        .order('created_at', { ascending: false })
 
-      if (error) {
+      if (wsError || !workshopsData) {
         setWorkshops([])
-      } else {
-        const byWorkshopId = new Map()
-
-        ;(data || []).forEach((artisan) => {
-          const key = artisan.workshop_id
-          if (!key) return
-
-          const existing = byWorkshopId.get(key)
-          if (!existing) {
-            byWorkshopId.set(key, {
-              id: key,
-              shop_name: artisan.shop_name,
-              shop_address: artisan.shop_address,
-              shop_description: artisan.shop_description,
-              banner_url: artisan.banner_url,
-              masters: artisan.full_name ? [artisan.full_name] : []
-            })
-            return
-          }
-
-          if (!existing.shop_name && artisan.shop_name) existing.shop_name = artisan.shop_name
-          if (!existing.shop_address && artisan.shop_address) existing.shop_address = artisan.shop_address
-          if (!existing.shop_description && artisan.shop_description) existing.shop_description = artisan.shop_description
-          if (!existing.banner_url && artisan.banner_url) existing.banner_url = artisan.banner_url
-
-          if (artisan.full_name && !existing.masters.includes(artisan.full_name)) {
-            existing.masters.push(artisan.full_name)
-          }
-        })
-
-        setWorkshops(Array.from(byWorkshopId.values()))
+        setLoading(false)
+        return
       }
+
+      // 2. Fetch approved artisans just to get their names for the "Masters" tag
+      const { data: artisansData } = await supabase
+        .from('tbl_user_profiles')
+        .select('full_name, workshop_id')
+        .eq('role', 'artisan')
+        .in('account_status', ['approved', 'Approved'])
+
+      // 3. Map the data together
+      const activeWorkshops = workshopsData.map(shop => {
+        const shopArtisans = artisansData?.filter(a => a.workshop_id === shop.id) || []
+        
+        return {
+          id: shop.id,
+          shop_name: shop.name, // Mapping to the variable names your UI already uses
+          shop_address: shop.address,
+          shop_description: shop.description,
+          banner_url: shop.banner_url,
+          masters: shopArtisans.map(a => a.full_name)
+        }
+      }).filter(shop => shop.masters.length > 0) // Hide empty workshops that have no approved artisans yet
+
+      setWorkshops(activeWorkshops)
       setLoading(false)
     }
 
     fetchWorkshops()
   }, [])
-
+  
   if (loading) return null
 
   if (workshops.length === 0) return null

@@ -6,6 +6,7 @@ export default function CollectionItemPage() {
   const { productId } = useParams()
   const [loading, setLoading] = useState(true)
   const [product, setProduct] = useState(null)
+  const [workshop, setWorkshop] = useState(null)
   const [artisan, setArtisan] = useState(null)
 
   useEffect(() => {
@@ -25,10 +26,18 @@ export default function CollectionItemPage() {
 
       setProduct(item)
 
+      const { data: workshopData } = await supabase
+        .from('tbl_workshops')
+        .select('id, name, address, owner_id')
+        .eq('id', item.workshop_id)
+        .maybeSingle()
+
+      setWorkshop(workshopData || null)
+
       const { data: artisanData } = await supabase
         .from('tbl_user_profiles')
-        .select('id, full_name, shop_name, shop_address, workshop_id')
-        .eq('id', item.workshop_id)
+        .select('id, full_name, workshop_id')
+        .eq('id', workshopData?.owner_id)
         .maybeSingle()
 
       setArtisan(artisanData || null)
@@ -50,7 +59,6 @@ export default function CollectionItemPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#0A0A0A] text-center p-8">
         <h2 className="text-3xl font-black text-white uppercase mb-3">Item Not Found</h2>
-        <p className="text-gray-400 text-sm mb-8">This collection item may have been removed.</p>
         <Link to="/" className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-black/40 backdrop-blur-md text-[#FDF8F5] border border-white/10 text-[10px] font-black tracking-widest uppercase hover:bg-black/60 transition-all">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
           Return
@@ -85,7 +93,7 @@ export default function CollectionItemPage() {
               <div className="border-t border-[#EAE0D5] pt-6">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">Crafted By</p>
                 <h2 className="text-xl font-black text-[#4A3224] uppercase">{artisan.full_name}</h2>
-                <p className="text-sm text-gray-600 mb-4">{artisan.shop_name || 'Workshop'} • {artisan.shop_address || 'Address unavailable'}</p>
+                <p className="text-sm text-gray-600 mb-4">{workshop?.name || 'Workshop'} • {workshop?.address || 'Address unavailable'}</p>
                 {artisan.workshop_id && (
                   <Link
                     to={`/workshops/${artisan.workshop_id}`}

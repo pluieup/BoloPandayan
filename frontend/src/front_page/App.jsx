@@ -11,6 +11,7 @@ import ProtectedRoute from './ProtectedRoute'
 const Register = lazy(() => import('../components/Register'))
 const ArtisanDashboard = lazy(() => import('../artisan/ArtisanDashboard'))
 const LGUAdminDashboard = lazy(() => import('../lgu/LGUAdminDashboard'))
+const DeveloperDashboard = lazy(() => import('../developer/DeveloperDashboard'))
 const UpdatePassword = lazy(() => import('../components/UpdatePassword'))
 const WorkshopPublicPage = lazy(() => import('../artisan/WorkshopPublicPage'))
 const CollectionItemPage = lazy(() => import('./CollectionItemPage'))
@@ -97,7 +98,7 @@ function App() {
           <Route
             path="/admin/workshops/:workshopId/risk-profile"
             element={
-              <ProtectedRoute user={user} profile={profile} allowedRoles={['admin', 'developer']}>
+              <ProtectedRoute user={user} profile={profile} allowedRoles={['lgu_admin', 'developer']}>
                 <RiskProfile />
               </ProtectedRoute>
             }
@@ -105,16 +106,26 @@ function App() {
           <Route
             path="/admin/workshops/:workshopId/damage-reports"
             element={
-              <ProtectedRoute user={user} profile={profile} allowedRoles={['admin', 'developer']}>
+              <ProtectedRoute user={user} profile={profile} allowedRoles={['lgu_admin', 'developer']}>
                 <DamageReports />
               </ProtectedRoute>
             }
           />
+          {/* DEVELOPER DASHBOARD */}
+          <Route
+            path="/developer-dashboard"
+            element={
+              <ProtectedRoute user={user} profile={profile} allowedRoles={['developer']}>
+                <DeveloperDashboard />
+              </ProtectedRoute>
+            }
+          />
+
           {/* LGU ADMIN DASHBOARD */}
           <Route 
             path="/lgu-dashboard" 
             element={
-              <ProtectedRoute user={user} profile={profile} allowedRoles={['admin', 'developer']}>
+              <ProtectedRoute user={user} profile={profile} allowedRoles={['lgu_admin']}>
                 <LGUAdminDashboard />
               </ProtectedRoute>
             } 
@@ -126,7 +137,7 @@ function App() {
           <Route 
             path="/artisan-dashboard" 
             element={
-              <ProtectedRoute user={user} profile={profile} allowedRoles={['artisan', 'developer']}>
+              <ProtectedRoute user={user} profile={profile} allowedRoles={['artisan']}>
                 <ArtisanDashboard />
               </ProtectedRoute>
             } 

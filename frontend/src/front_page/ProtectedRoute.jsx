@@ -15,6 +15,14 @@ export default function ProtectedRoute({ user, profile, allowedRoles, children }
     return <Navigate to="/" replace />;
   }
 
-  // 4. If they passed all checks, show the page!
+  // 4. LGU admins must be explicitly approved by a developer.
+  if (
+    profile.role === 'lgu_admin' &&
+    (profile.is_approved !== true || profile.account_status !== 'approved')
+  ) {
+    return <Navigate to="/" replace />;
+  }
+
+  // 5. If they passed all checks, show the page!
   return children;
 };

@@ -47,7 +47,7 @@ export default function DamageReports() {
     fetchData()
   }, [workshopId])
 
-  const isEditable = userRole === 'admin' || userRole === 'developer'
+  const isEditable = userRole === 'lgu_admin' || userRole === 'developer'
 
   const fetchData = async () => {
     setLoading(true)

@@ -41,7 +41,24 @@ export default function Register() {
       const userId = authData.user.id
       let idUrl = null
 
-      // 2. Upload ID Image (Artisan only)
+      // 2. Create profile first so storage policies that depend on profile rows can pass
+      const { error: profileError } = await supabase
+        .from('tbl_user_profiles')
+        .insert([
+          {
+          id: userId,
+          full_name: fullName,
+          role: role,
+          account_status: role === 'lgu_admin' ? 'pending_approval' : 'pending',
+          is_approved: false,
+          workshop_id: null,
+            valid_id_url: null
+              }
+        ])
+
+      if (profileError) throw profileError
+
+      // 3. Upload ID image and save URL (Artisan only)
       if (role === 'artisan' && idFile) {
         const fileExt = idFile.name.split('.').pop()
         const fileName = `${userId}_${Date.now()}.${fileExt}`
@@ -57,26 +74,14 @@ export default function Register() {
           .getPublicUrl(fileName)
 
         idUrl = publicUrlData.publicUrl
+
+        const { error: updateIdError } = await supabase
+          .from('tbl_user_profiles')
+          .update({ valid_id_url: idUrl })
+          .eq('id', userId)
+
+        if (updateIdError) throw updateIdError
       }
-
-      // 3. Create the Master Profile (Simplified!)
-      const { error: profileError } = await supabase
-        .from('tbl_user_profiles')
-        .insert([
-          {
-          id: userId,
-          full_name: fullName,
-          role: role,
-          account_status: role === 'admin' ? 'approved' : 'pending',
-          is_approved: role === 'admin',
-          workshop_id: null,
-          valid_id_url: idUrl,
-          shop_name: null,
-          shop_address: null          
-              }
-        ])
-
-      if (profileError) throw profileError
 
       // Sign out after registration to prevent auto-login
       await supabase.auth.signOut()
@@ -106,7 +111,7 @@ export default function Register() {
         {/* Role Toggle */}
         <div className="flex bg-black/30 rounded-xl p-1 mb-6 border border-white/10">
           <button type="button" onClick={() => setRole('artisan')} className={`flex-1 py-2.5 text-[10px] font-bold tracking-widest uppercase rounded-lg transition-all ${role === 'artisan' ? 'bg-[#D17B57] text-white' : 'text-gray-400'}`}>Local Artisan</button>
-          <button type="button" onClick={() => setRole('admin')} className={`flex-1 py-2.5 text-[10px] font-bold tracking-widest uppercase rounded-lg transition-all ${role === 'admin' ? 'bg-[#D17B57] text-white' : 'text-gray-400'}`}>LGU Admin</button>
+          <button type="button" onClick={() => setRole('lgu_admin')} className={`flex-1 py-2.5 text-[10px] font-bold tracking-widest uppercase rounded-lg transition-all ${role === 'lgu_admin' ? 'bg-[#D17B57] text-white' : 'text-gray-400'}`}>LGU Admin</button>
         </div>
 
         {errorMsg && <div className="bg-red-500/20 border border-red-500/50 text-red-200 text-[10px] p-3 rounded-lg mb-4 text-center font-bold">{errorMsg}</div>}
@@ -149,7 +154,7 @@ export default function Register() {
           </div>
 
           <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-[#FDF8F5] to-[#EAE0D5] text-[#4A3224] py-4 rounded-xl font-black text-[10px] tracking-widest hover:scale-[1.01] transition-all mt-4 disabled:opacity-50 uppercase shadow-lg">
-            {loading ? 'PROCESSING...' : (role === 'artisan' ? 'REGISTER ACCOUNT' : 'CREATE ADMIN ACCOUNT')}
+            {loading ? 'PROCESSING...' : (role === 'artisan' ? 'REGISTER ACCOUNT' : 'CREATE LGU ADMIN ACCOUNT')}
           </button>
         </form>
 

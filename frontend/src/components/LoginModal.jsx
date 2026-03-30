@@ -36,7 +36,7 @@ export default function LoginModal({ isOpen, onClose }) {
 
       const { data: profile, error: profileError } = await supabase
         .from('tbl_user_profiles')
-        .select('account_status, role')
+        .select('account_status, is_approved, role')
         .eq('id', authData.user.id)
         .limit(1)
         .maybeSingle();
@@ -44,7 +44,22 @@ export default function LoginModal({ isOpen, onClose }) {
       if (profileError) throw profileError
       if (!profile) throw new Error('Profile not found. Please contact support or re-register.')
 
-      navigate(profile.role === 'admin' || profile.role === 'developer' ? '/lgu-dashboard' : '/artisan-dashboard')
+      const isLGUPending =
+        profile.role === 'lgu_admin' &&
+        (profile.is_approved !== true || profile.account_status !== 'approved')
+
+      if (isLGUPending) {
+        await supabase.auth.signOut()
+        throw new Error('Your LGU admin account is pending developer approval.')
+      }
+
+      if (profile.role === 'developer') {
+        navigate('/developer-dashboard')
+      } else if (profile.role === 'lgu_admin') {
+        navigate('/lgu-dashboard')
+      } else {
+        navigate('/artisan-dashboard')
+      }
       onClose()
 
     } catch (error) {

@@ -85,7 +85,7 @@ export default function RiskAssessmentRecords() {
     if (workshopId) run()
   }, [workshopId])
 
-  const isEditable = useMemo(() => userRole === 'admin' || userRole === 'developer', [userRole])
+  const isEditable = useMemo(() => userRole === 'lgu_admin' || userRole === 'developer', [userRole])
 
   const calculateRiskFromSnapshot = (snapshot) => {
     const riskToWeight = {

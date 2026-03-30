@@ -34,7 +34,7 @@ export default function Navbar({ onLoginClick, isDarkMode, toggleTheme }) {
   const fetchProfile = async (userId) => {
     const { data } = await supabase
       .from('tbl_user_profiles')
-      .select('full_name, role')
+      .select('full_name, role, is_approved, account_status')
       .eq('id', userId)
       .maybeSingle()
     if (data) setProfile(data)
@@ -50,7 +50,13 @@ export default function Navbar({ onLoginClick, isDarkMode, toggleTheme }) {
 
   const handleDashboardRedirect = () => {
     setIsMenuOpen(false)
-    if (profile?.role === 'admin' || profile?.role === 'developer') {
+    if (profile?.role === 'developer') {
+      navigate('/developer-dashboard')
+    } else if (profile?.role === 'lgu_admin') {
+      if (profile?.is_approved !== true || profile?.account_status !== 'approved') {
+        alert('Your LGU admin account is pending developer approval.')
+        return
+      }
       navigate('/lgu-dashboard')
     } else if (profile?.role === 'artisan') {
       navigate('/artisan-dashboard')
