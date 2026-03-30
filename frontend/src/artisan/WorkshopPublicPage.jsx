@@ -170,40 +170,40 @@ export default function WorkshopPublicPage() {
 
   return (
     <div className="min-h-screen bg-[#FDF8F5]">
-      <header className="relative h-96 md:h-[32rem] overflow-hidden bg-[#121212]">
+      <header className="relative h-72 sm:h-80 md:h-[28rem] lg:h-[32rem] overflow-hidden bg-[#121212]">
         <div className="absolute inset-0 bg-cover bg-center opacity-50" style={{ backgroundImage: `url(${bannerUrl})` }}></div>
         <div className="absolute inset-0 bg-gradient-to-t from-[#FDF8F5] via-[#121212]/40 to-transparent"></div>
 
-        <div className="absolute top-8 left-8 z-10">
-          <Link to="/" className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-black/40 backdrop-blur-md text-[#FDF8F5] border border-white/10 text-[10px] font-black tracking-widest uppercase hover:bg-black/60 transition-all">
+        <div className="absolute top-4 left-4 sm:top-8 sm:left-8 z-10">
+          <Link to="/" className="inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-black/40 backdrop-blur-md text-[#FDF8F5] border border-white/10 text-[9px] sm:text-[10px] font-black tracking-widest uppercase hover:bg-black/60 transition-all">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
             Return
           </Link>
         </div>
 
-        <div className="absolute bottom-0 left-0 w-full p-8 md:p-16">
-          <h1 className="text-5xl md:text-7xl font-black text-white font-serif uppercase tracking-tighter mb-4 drop-shadow-sm">
+        <div className="absolute bottom-0 left-0 w-full p-4 sm:p-8 md:p-12 lg:p-16">
+          <h1 className="text-3xl sm:text-5xl lg:text-7xl font-black text-white font-serif uppercase tracking-tight mb-2 sm:mb-4 drop-shadow-sm break-words">
             {title}
           </h1>
-          <p className="text-[#D17B57] font-black text-black text-[10px] md:text-xs tracking-[0.3em] uppercase flex items-center gap-3">
+          <p className="text-[#D17B57] font-black text-black text-[9px] sm:text-[10px] md:text-xs tracking-[0.2em] sm:tracking-[0.3em] uppercase flex items-center gap-2 sm:gap-3 break-words">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
             {address}
           </p>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-8 md:px-16 py-16 reveal-up">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 lg:px-16 py-10 sm:py-12 md:py-16 reveal-up">
         
-        <section className="mb-20 max-w-4xl relative">
+        <section className="mb-16 sm:mb-20 max-w-4xl relative">
           <div className="flex items-center gap-4 mb-8">
             <div className="h-[2px] w-12 bg-[#D17B57]"></div>
             <h2 className="text-sm font-black text-[#D17B57] uppercase tracking-[0.3em]">The Legacy</h2>
           </div>
-          <p className="text-[#4A3224] text-lg md:text-xl leading-relaxed font-serif whitespace-pre-wrap">
+          <p className="text-[#4A3224] text-base sm:text-lg md:text-xl leading-relaxed font-serif whitespace-pre-wrap">
             {description}
           </p>
 
-          <div className="mt-8 inline-flex items-center gap-4 pandayan-curve border border-[#EAD6CA] bg-white px-6 py-5 shadow-sm">
+          <div className="mt-8 inline-flex flex-col sm:flex-row sm:items-center gap-4 pandayan-curve border border-[#EAD6CA] bg-white px-5 sm:px-6 py-4 sm:py-5 shadow-sm w-full sm:w-auto">
             <div>
               <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">Workshop Risk Profile</p>
               <p className="text-2xl font-black text-[#D17B57]">{riskScore}%</p>
@@ -211,7 +211,7 @@ export default function WorkshopPublicPage() {
                 <p className="text-[10px] text-gray-500 mt-1">Latest assessed: {riskAssessedDate}</p>
               )}
             </div>
-            <div className="h-10 w-px bg-[#EAD6CA]"></div>
+            <div className="h-px w-full sm:w-px sm:h-10 bg-[#EAD6CA]"></div>
             <p className="action-label text-[10px] text-[#1A1A1A]">{riskLabel} Risk</p>
           </div>
 
@@ -269,7 +269,7 @@ export default function WorkshopPublicPage() {
                 </a>
               </div>
               
-              <div className="rounded-2xl overflow-hidden shadow-lg border border-[#EAD6CA] h-[400px] z-0 relative">
+              <div className="rounded-2xl overflow-hidden shadow-lg border border-[#EAD6CA] h-[280px] sm:h-[340px] md:h-[400px] z-0 relative">
                 <MapContainer
                   center={[mapLat, mapLng]}
                   zoom={((latestRiskRecord?.hazard_snapshot?.lat) || workshop?.lat) ? 15 : 12}
@@ -286,8 +286,8 @@ export default function WorkshopPublicPage() {
           )}
         </section>
 
-        <section className="mb-24">
-          <h2 className="text-3xl font-black text-[#1A1A1A] font-serif uppercase tracking-widest mb-10">Master Artisans</h2>
+        <section className="mb-20 sm:mb-24">
+          <h2 className="text-2xl sm:text-3xl font-black text-[#1A1A1A] font-serif uppercase tracking-widest mb-8 sm:mb-10">Master Artisans</h2>
           {artisans.length === 0 ? (
             <p className="text-sm text-[#8B5E3C] italic font-serif">The artisan roster is currently being updated...</p>
           ) : (
@@ -299,7 +299,7 @@ export default function WorkshopPublicPage() {
                     setSelectedArtisan(artisan)
                     setIsArtisanModalOpen(true)
                   }}
-                  className="group bg-white rounded-2xl p-6 shadow-sm hover:shadow-xl border border-[#EAE0D5] transition-all duration-300 cursor-pointer flex items-center gap-6"
+                  className="group bg-white rounded-2xl p-4 sm:p-6 shadow-sm hover:shadow-xl border border-[#EAE0D5] transition-all duration-300 cursor-pointer flex items-center gap-4 sm:gap-6"
                 >
                   <div className="w-16 h-16 rounded-full overflow-hidden bg-[#EAE0D5] border-2 border-transparent group-hover:border-[#D17B57] transition-all shrink-0">
                     <img 
@@ -309,8 +309,8 @@ export default function WorkshopPublicPage() {
                     />
                   </div>
                   <div>
-                    <h3 className="text-lg font-black text-[#1A1A1A] uppercase tracking-wider group-hover:text-[#D17B57] transition-colors">{artisan.full_name}</h3>
-                    <p className="text-[10px] font-black tracking-[0.2em] text-[#8B5E3C] uppercase mt-1">Resident Blacksmith</p>
+                    <h3 className="text-base sm:text-lg font-black text-[#1A1A1A] uppercase tracking-wider group-hover:text-[#D17B57] transition-colors break-words">{artisan.full_name}</h3>
+                    <p className="text-[9px] sm:text-[10px] font-black tracking-[0.2em] text-[#8B5E3C] uppercase mt-1">Resident Blacksmith</p>
                   </div>
                 </div>
               ))}
@@ -319,13 +319,17 @@ export default function WorkshopPublicPage() {
         </section>
 
         <section>
-          <h2 className="text-3xl font-black text-[#1A1A1A] font-serif uppercase tracking-widest mb-10">Forged Works</h2>
+          <h2 className="text-2xl sm:text-3xl font-black text-[#1A1A1A] font-serif uppercase tracking-widest mb-8 sm:mb-10">Forged Works</h2>
           {products.length === 0 ? (
             <p className="text-sm text-[#8B5E3C] italic font-serif">No products have been cataloged yet.</p>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
               {products.map((product) => (
-                <div key={product.id} className="group flex flex-col bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-[#EAE0D5] transition-all duration-300">
+                <Link
+                  key={product.id}
+                  to={`/collection/${product.id}`}
+                  className="group flex flex-col bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-[#EAE0D5] transition-all duration-300 hover:-translate-y-1"
+                >
                   <div className="aspect-square bg-[#1A1A1A] overflow-hidden relative">
                     <img 
                       src={product.image_url} 
@@ -333,21 +337,24 @@ export default function WorkshopPublicPage() {
                       className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" 
                     />
                   </div>
-                  <div className="p-6 flex flex-col flex-grow">
-                    <h3 className="text-xl font-black text-[#1A1A1A] font-serif mb-2 line-clamp-1">{product.name}</h3>
+                  <div className="p-4 sm:p-6 flex flex-col flex-grow">
+                    <h3 className="text-lg sm:text-xl font-black text-[#1A1A1A] font-serif mb-2 line-clamp-1">{product.name}</h3>
                     <p className="text-[9px] text-[#8B5E3C] uppercase tracking-[0.2em] mb-4 font-bold">
                       {product.blade_material} / {product.handle_material}
                     </p>
                     <p className="text-sm text-[#6B5041] line-clamp-2 mb-6 flex-grow leading-relaxed">
                       {product.description || 'No description provided.'}
                     </p>
-                    <div className="pt-4 border-t border-[#EAE0D5]">
+                    <div className="pt-4 border-t border-[#EAE0D5] space-y-2">
                       <p className="text-xs font-black text-[#D17B57] uppercase tracking-widest">
                         PHP {Number(product.price || 0).toLocaleString()}
                       </p>
+                      <p className="text-[9px] text-[#8B5E3C] font-black uppercase tracking-[0.3em] opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        View Details
+                      </p>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}
@@ -358,10 +365,10 @@ export default function WorkshopPublicPage() {
       {isArtisanModalOpen && selectedArtisan && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsArtisanModalOpen(false)}></div>
-          <div className="relative z-10 w-full max-w-lg bg-[#FDF8F5] rounded-[2rem] p-8 md:p-12 shadow-2xl flex flex-col items-center text-center animate-in zoom-in-95 duration-300">
+          <div className="relative z-10 w-full max-w-lg max-h-[90vh] overflow-y-auto bg-[#FDF8F5] rounded-[2rem] p-6 sm:p-8 md:p-12 shadow-2xl flex flex-col items-center text-center animate-in zoom-in-95 duration-300">
             <button 
               onClick={() => setIsArtisanModalOpen(false)}
-              className="absolute top-6 right-6 text-gray-400 hover:text-[#4A3224] transition-colors"
+              className="absolute top-4 right-4 sm:top-6 sm:right-6 text-gray-400 hover:text-[#4A3224] transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>

@@ -18,8 +18,12 @@ export default function LoginModal({ isOpen, onClose }) {
       setErrorMsg("Please enter your email address first.");
       return;
     }
+
+    const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
+    const redirectTo = `${siteUrl.replace(/\/$/, '')}/update-password`;
+
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'http://localhost:5173/update-password',
+      redirectTo,
     });
     if (error) setErrorMsg(error.message);
     else alert("Check your email for the reset link!");

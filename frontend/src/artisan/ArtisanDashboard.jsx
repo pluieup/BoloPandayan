@@ -38,14 +38,14 @@ export default function ArtisanDashboard() {
             return navigate('/')
         }
 
-        const profileData = profileRows?.[0] ?? null
+        let profileData = profileRows?.[0] ?? null
 
         if (!profileData) {
             await supabase.auth.signOut()
             return navigate('/')
         }
 
-        setProfile(profileData)
+        let resolvedWorkshop = null
 
         // Fetch the workshop data to check ownership
     if (profileData.workshop_id) {
@@ -54,9 +54,22 @@ export default function ArtisanDashboard() {
         .select('*')
         .eq('id', profileData.workshop_id)
         .single()
-        
-      if (workshopData) setMyWorkshop(workshopData)
+
+      if (workshopData) {
+        resolvedWorkshop = workshopData
+      } else {
+        // Clear stale workshop references so user is redirected to workshop setup.
+        await supabase
+          .from('tbl_user_profiles')
+          .update({ workshop_id: null })
+          .eq('id', profileData.id)
+
+        profileData = { ...profileData, workshop_id: null }
+      }
     }
+
+    setProfile(profileData)
+    setMyWorkshop(resolvedWorkshop)
 
     let productData = []
     if (profileData.workshop_id) {
@@ -85,13 +98,13 @@ export default function ArtisanDashboard() {
   )
 
     const normalizedStatus = (profile?.account_status || '').toLowerCase()
-    const hasSubmittedWorkshop = normalizedStatus === 'pending' && !!profile?.workshop_id
+    const hasWorkshop = !!profile?.workshop_id
 
-    if (normalizedStatus === 'pending' && !hasSubmittedWorkshop) {
+    if (!hasWorkshop) {
       return <JoinWorkshopView profile={profile} onRefresh={fetchProfile} />
     }
 
-    if (hasSubmittedWorkshop || normalizedStatus === 'pending_approval') {
+    if (normalizedStatus === 'pending' || normalizedStatus === 'pending_approval') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0A0A0A] p-6 text-center">
         <div className="max-w-md bg-white/10 backdrop-blur-xl p-10 rounded-[2.5rem] border border-white/20">
@@ -99,10 +112,10 @@ export default function ArtisanDashboard() {
             <svg className="w-8 h-8 text-[#D17B57] animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           </div>
           <h2 className="text-2xl font-black text-white uppercase mb-4 tracking-widest">
-            {hasSubmittedWorkshop ? 'Submission Received' : 'Verification Pending'}
+            {normalizedStatus === 'pending' ? 'Submission Received' : 'Verification Pending'}
           </h2>
           <p className="text-gray-400 text-xs uppercase tracking-widest leading-relaxed">
-            {hasSubmittedWorkshop
+            {normalizedStatus === 'pending'
               ? 'Your pandayan setup has been submitted. Please wait while the LGU Admin reviews your profile and workshop application.'
               : 'The LGU Admin is currently reviewing your profile and workshop application. You will be notified once you are approved to publish products.'}
           </p>

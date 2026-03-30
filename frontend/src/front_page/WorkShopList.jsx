@@ -53,20 +53,20 @@ useEffect(() => {
   if (workshops.length === 0) return null
 
   return (
-    <section className={`relative bg-transparent py-24 px-6 sm:px-12 overflow-hidden transition-colors duration-700`}>
+    <section className={`relative bg-transparent py-16 sm:py-20 md:py-24 px-4 sm:px-8 md:px-12 overflow-hidden transition-colors duration-700`}>
       <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
         <div className="absolute top-[-10%] left-[-5%] w-96 h-96 bg-[#D17B57] rounded-full blur-[120px]"></div>
       </div>
 
       <div className="max-w-7xl mx-auto relative z-10">
-        <div className="mb-16 text-center">
-          <h2 className={`text-4xl md:text-5xl font-black ${isDarkMode ? 'text-[#FDF8F5]' : 'text-[#4A3224]'} tracking-tight font-serif uppercase mb-6 drop-shadow-lg`}>
+        <div className="mb-12 sm:mb-16 text-center">
+          <h2 className={`text-3xl sm:text-4xl md:text-5xl font-black ${isDarkMode ? 'text-[#FDF8F5]' : 'text-[#4A3224]'} tracking-tight font-serif uppercase mb-5 sm:mb-6 drop-shadow-lg`}>
             Workshops
           </h2>
           <div className="mx-auto w-24 h-1 bg-gradient-to-r from-transparent via-[#D17B57] to-transparent rounded-full"></div>
         </div>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-8">
           {workshops.map((workshop) => {
             // Setup dynamic data fallbacks
             const bgImage = workshop.banner_url || '/assets/Background.png'
@@ -92,20 +92,20 @@ useEffect(() => {
                   </div>
 
                   {/* Text Content overlaying the bottom */}
-                  <div className="absolute bottom-0 left-0 w-full p-6 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                    <h3 className={`text-2xl font-black font-serif tracking-wide mb-1 drop-shadow-md ${isDarkMode ? 'text-[#FDF8F5]' : 'text-[#4A3224]'}`}>
+                  <div className="absolute bottom-0 left-0 w-full p-4 sm:p-6 transform translate-y-2 sm:translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                    <h3 className={`text-xl sm:text-2xl font-black font-serif tracking-wide mb-1 drop-shadow-md line-clamp-1 ${isDarkMode ? 'text-[#FDF8F5]' : 'text-[#4A3224]'}`}>
                       {workshop.shop_name}
                     </h3>
                     
-                    <p className="text-[9px] text-[#D17B57] font-bold uppercase tracking-[0.2em] mb-2 line-clamp-1">
+                    <p className="text-[8px] sm:text-[9px] text-[#D17B57] font-bold uppercase tracking-[0.16em] sm:tracking-[0.2em] mb-2 line-clamp-1">
                       {masterText}
                     </p>
 
-                    <p className={`text-xs line-clamp-2 mb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${isDarkMode ? 'text-[#EAE0D5]/70' : 'text-[#4A3224]/70'}`}>
+                    <p className={`text-[11px] sm:text-xs line-clamp-2 mb-3 sm:mb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${isDarkMode ? 'text-[#EAE0D5]/70' : 'text-[#4A3224]/70'}`}>
                       {descText}
                     </p>
                     
-                    <p className={`text-[9px] font-bold uppercase tracking-[0.3em] opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100 ${isDarkMode ? 'text-white' : 'text-[#4A3224]'}`}>
+                    <p className={`text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.24em] sm:tracking-[0.3em] opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100 ${isDarkMode ? 'text-white' : 'text-[#4A3224]'}`}>
                       View Workshop →
                     </p>
                   </div>

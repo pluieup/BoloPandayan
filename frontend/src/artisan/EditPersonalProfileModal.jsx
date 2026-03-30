@@ -3,6 +3,7 @@ import { supabase } from '../supabaseClient'
 
 export default function EditPersonalProfileModal({ isOpen, onClose, profile, onSaveSuccess }) {
   const [formData, setFormData] = useState({ 
+    full_name: profile?.full_name || '',
     bio: profile?.bio || '', 
   })
   const [photoFile, setPhotoFile] = useState(null)
@@ -10,7 +11,10 @@ export default function EditPersonalProfileModal({ isOpen, onClose, profile, onS
 
   useEffect(() => {
     if (isOpen) {
-      setFormData({ bio: profile?.bio || '' })
+      setFormData({
+        full_name: profile?.full_name || '',
+        bio: profile?.bio || ''
+      })
       setPhotoFile(null)
     }
   }, [isOpen, profile])
@@ -39,6 +43,7 @@ export default function EditPersonalProfileModal({ isOpen, onClose, profile, onS
       const { error } = await supabase
         .from('tbl_user_profiles')
         .update({
+          full_name: formData.full_name,
           bio: formData.bio,
           profile_photo_url: finalPhotoUrl
         })
@@ -63,6 +68,18 @@ export default function EditPersonalProfileModal({ isOpen, onClose, profile, onS
         <p className="text-[10px] font-bold text-[#D17B57] uppercase tracking-[0.3em] mb-8">Update Artisan Details</p>
 
         <div className="space-y-5">
+          <div>
+            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Artisan Name</label>
+            <input
+              required
+              type="text"
+              placeholder="Enter your artisan name"
+              value={formData.full_name || ''}
+              onChange={e => setFormData({ ...formData, full_name: e.target.value })}
+              className="w-full bg-white border border-[#EAE0D5] rounded-2xl px-5 py-3 text-sm focus:outline-none focus:border-[#D17B57]"
+            />
+          </div>
+
           <div>
             <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Profile Photo</label>
             <div className="border-2 border-dashed border-[#D17B57]/30 rounded-2xl p-4 text-center bg-white/50">
