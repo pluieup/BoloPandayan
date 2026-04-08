@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { useNavigate, Link } from 'react-router-dom'
 import UploadBoloModal from '../components/UploadBoloModal'
@@ -19,11 +19,7 @@ export default function ArtisanDashboard() {
   const [myProducts, setMyProducts] = useState([])
   const [myWorkshop, setMyWorkshop] = useState(null)
 
-  useEffect(() => {
-    fetchProfile()
-  }, [])
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return navigate('/')
 
@@ -84,7 +80,15 @@ export default function ArtisanDashboard() {
     setMyProducts(productData)
 
     setLoading(false)
-  }
+  }, [navigate])
+
+  useEffect(() => {
+    const initializeProfile = async () => {
+      await fetchProfile()
+    }
+
+    initializeProfile()
+  }, [fetchProfile])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()

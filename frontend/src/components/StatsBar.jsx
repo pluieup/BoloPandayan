@@ -20,11 +20,6 @@ export default function StatsBar({ isDarkMode }) {
         .eq('role', 'artisan')
         .or('is_approved.eq.true,account_status.eq.approved,account_status.eq.Approved')
 
-      const totalArtisansPromise = supabase
-        .from('tbl_user_profiles')
-        .select('*', { count: 'exact', head: true })
-        .eq('role', 'artisan')
-
       const workshopsPromise = supabase
         .from('tbl_workshops')
         .select('*', { count: 'exact', head: true })
@@ -75,10 +70,11 @@ export default function StatsBar({ isDarkMode }) {
       })
     }, { threshold: 0.1 })
     
-    if (domRef.current) observer.observe(domRef.current)
+    const observedElement = domRef.current
+    if (observedElement) observer.observe(observedElement)
     
     return () => {
-      if (domRef.current) observer.unobserve(domRef.current)
+      if (observedElement) observer.unobserve(observedElement)
     }
   }, [])
 

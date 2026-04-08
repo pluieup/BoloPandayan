@@ -4,6 +4,7 @@ import ProjectCard from '../components/ProjectCard'
 
 export default function CollectionGallery({ isDarkMode }) {
   const [products, setProducts] = useState([])
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -17,6 +18,10 @@ export default function CollectionGallery({ isDarkMode }) {
 
     fetchProducts()
   }, [])
+
+  const filteredProducts = products.filter((product) =>
+    (product.name || '').toLowerCase().includes(searchQuery.toLowerCase().trim())
+  )
 
   if (products.length === 0) {
     return (
@@ -35,11 +40,45 @@ export default function CollectionGallery({ isDarkMode }) {
         
         {/* Sleeker gradient accent line */}
         <div className="w-24 h-1 bg-gradient-to-r from-transparent via-[#D17B57] to-transparent rounded-full"></div>
-        
+
+        <div className="w-full max-w-xl mt-8">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search products by name..."
+              className={`w-full rounded-full px-5 py-3 text-sm sm:text-base outline-none border transition-all duration-300 ${isDarkMode
+                ? 'bg-[#1A1A1A]/80 text-[#FDF8F5] border-white/10 placeholder:text-[#EAE0D5]/50 focus:border-[#D17B57] focus:shadow-[0_0_20px_rgba(209,123,87,0.2)]'
+                : 'bg-[#FDF8F5]/90 text-[#4A3224] border-[#4A3224]/15 placeholder:text-[#4A3224]/45 focus:border-[#D17B57] focus:shadow-[0_0_20px_rgba(209,123,87,0.15)]'
+              }`}
+            />
+            <button
+              type="button"
+              className="rounded-full px-6 py-3 action-label text-xs uppercase bg-[#D17B57] text-white hover:bg-[#b96847] transition-all duration-300"
+              aria-label="Search products"
+            >
+              Search
+            </button>
+            {searchQuery.trim() !== '' && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className={`rounded-full px-6 py-3 action-label text-xs uppercase border transition-all duration-300 ${isDarkMode
+                  ? 'border-white/15 text-[#FDF8F5] hover:bg-white/10'
+                  : 'border-[#4A3224]/20 text-[#4A3224] hover:bg-[#4A3224]/5'
+                }`}
+                aria-label="Clear product search"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8 max-w-7xl mx-auto">
-        {products.map((item) => (
+        {filteredProducts.map((item) => (
           <ProjectCard 
             key={item.id}
             id={item.id}
@@ -49,6 +88,12 @@ export default function CollectionGallery({ isDarkMode }) {
           />
         ))}
       </div>
+
+      {products.length > 0 && filteredProducts.length === 0 && (
+        <p className={`mt-10 text-center font-serif italic ${isDarkMode ? 'text-[#EAE0D5]/55' : 'text-[#4A3224]/55'}`}>
+          No products matched your search.
+        </p>
+      )}
     </section>
   )
 }

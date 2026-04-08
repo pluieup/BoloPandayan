@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useCallback, useEffect, useState, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 
@@ -23,6 +23,28 @@ export default function DamageReports() {
     admin_notes: ''
   })
 
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    
+    // Get Workshop Name
+    const { data: workshop } = await supabase
+      .from('tbl_workshops')
+      .select('name')
+      .eq('id', workshopId)
+      .single()
+      
+    if (workshop) setWorkshopName(workshop.name)
+
+    const { data: reportData } = await supabase
+      .from('tbl_damage_reports')
+      .select('*')
+      .eq('workshop_id', workshopId)
+      .order('incident_date', { ascending: false })
+
+    if (reportData) setReports(reportData)
+    setLoading(false)
+  }, [workshopId])
+
   useEffect(() => {
     const getCurrentUser = async () => {
       const { data: { session } } = await supabase.auth.getSession()
@@ -43,33 +65,15 @@ export default function DamageReports() {
       setUserRole(roleData?.role || null)
     }
 
-    getCurrentUser()
-    fetchData()
-  }, [workshopId])
+    const initializeData = async () => {
+      await getCurrentUser()
+      await fetchData()
+    }
+
+    initializeData()
+  }, [fetchData])
 
   const isEditable = userRole === 'lgu_admin' || userRole === 'developer'
-
-  const fetchData = async () => {
-    setLoading(true)
-    
-    // Get Workshop Name
-    const { data: workshop } = await supabase
-      .from('tbl_workshops')
-      .select('name')
-      .eq('id', workshopId)
-      .single()
-      
-    if (workshop) setWorkshopName(workshop.name)
-
-    const { data: reportData } = await supabase
-      .from('tbl_damage_reports')
-      .select('*')
-      .eq('workshop_id', workshopId)
-      .order('incident_date', { ascending: false })
-
-    if (reportData) setReports(reportData)
-    setLoading(false)
-  }
 
   const totalEstimatedDamage = useMemo(() => {
     return reports.reduce((sum, report) => sum + Number(report.estimated_cost || 0), 0)

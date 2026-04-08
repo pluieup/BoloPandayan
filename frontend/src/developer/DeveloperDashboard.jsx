@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
-export default function DeveloperDashboard({ profile }) {
+export default function DeveloperDashboard() {
   const [pendingLGU, setPendingLGU] = useState([]);
   const [approvedLGU, setApprovedLGU] = useState([]);
   const [loading, setLoading] = useState(true);

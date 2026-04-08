@@ -8,6 +8,15 @@ export default function Navbar({ onLoginClick, isDarkMode, toggleTheme }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false) // Toggle for mobile menu
   const navigate = useNavigate()
 
+  async function fetchProfile(userId) {
+    const { data } = await supabase
+      .from('tbl_user_profiles')
+      .select('full_name, role, is_approved, account_status')
+      .eq('id', userId)
+      .maybeSingle()
+    if (data) setProfile(data)
+  }
+
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession()
@@ -30,15 +39,6 @@ export default function Navbar({ onLoginClick, isDarkMode, toggleTheme }) {
 
     return () => authListener.subscription.unsubscribe()
   }, [])
-
-  const fetchProfile = async (userId) => {
-    const { data } = await supabase
-      .from('tbl_user_profiles')
-      .select('full_name, role, is_approved, account_status')
-      .eq('id', userId)
-      .maybeSingle()
-    if (data) setProfile(data)
-  }
 
   const handleLogout = async () => {
     await supabase.auth.signOut()

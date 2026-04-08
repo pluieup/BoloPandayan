@@ -96,8 +96,6 @@ export default function WorkshopPublicPage() {
     if (workshopId) fetchWorkshopPage()
   }, [workshopId])
 
-  const primaryArtisan = artisans[0] || null
-
 // Pull directly from the workshop Source of Truth
   const title = useMemo(() => {
     return workshop?.name || 'Workshop'

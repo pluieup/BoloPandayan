@@ -21,11 +21,7 @@ const LGUAdminDashboard = () => {
 
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchArtisans();
-  }, []);
-
-  const fetchArtisans = async () => {
+  async function fetchArtisans() {
     setLoading(true);
     setLoadError('');
     const { data, error } = await supabase
@@ -41,7 +37,15 @@ const LGUAdminDashboard = () => {
       setArtisans(data || []);
     }
     setLoading(false);  
-  };
+  }
+
+  useEffect(() => {
+    const initializeArtisans = async () => {
+      await fetchArtisans();
+    };
+
+    initializeArtisans();
+  }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
