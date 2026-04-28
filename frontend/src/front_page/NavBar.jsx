@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
+import ConfirmationModal from '../components/ConfirmationModal'
 
 export default function Navbar({ onLoginClick, isDarkMode, toggleTheme }) {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [isMenuOpen, setIsMenuOpen] = useState(false) // Toggle for mobile menu
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false)
   const navigate = useNavigate()
 
   async function fetchProfile(userId) {
@@ -45,6 +47,7 @@ export default function Navbar({ onLoginClick, isDarkMode, toggleTheme }) {
     setUser(null)
     setProfile(null)
     setIsMenuOpen(false)
+    setIsLogoutConfirmOpen(false)
     navigate('/')
   }
 
@@ -67,6 +70,13 @@ export default function Navbar({ onLoginClick, isDarkMode, toggleTheme }) {
   
   return (
     <nav className="forge-glass fixed top-0 w-full z-[100] px-6 md:px-12 py-4 flex justify-between items-center transition-all duration-300">
+      <ConfirmationModal
+        isOpen={isLogoutConfirmOpen}
+        title="Confirm Logout"
+        message="Are you sure you want to sign out of your account?"
+        onConfirm={handleLogout}
+        onCancel={() => setIsLogoutConfirmOpen(false)}
+      />
         <div className="flex items-center gap-4 group cursor-pointer" onClick={() => navigate('/')}>
           <img 
             src="/assets/BoloFinal.png" 
@@ -149,7 +159,7 @@ export default function Navbar({ onLoginClick, isDarkMode, toggleTheme }) {
             <div className="flex flex-col gap-4">
               <span className="font-bold text-xs tracking-[0.15em] text-[#D17B57] uppercase">HELLO, {profile.full_name}</span>
               <button onClick={handleDashboardRedirect} className="w-full py-4 bg-[#4A3224] text-white rounded-full action-label text-xs uppercase hover:scale-[1.02] transition-all">My Dashboard</button>
-              <button onClick={handleLogout} className="w-full py-4 border border-red-100 text-red-600 rounded-full action-label text-xs uppercase hover:scale-[1.02] transition-all">Logout</button>
+              <button onClick={() => setIsLogoutConfirmOpen(true)} className="w-full py-4 border border-red-100 text-red-600 rounded-full action-label text-xs uppercase hover:scale-[1.02] transition-all">Logout</button>
             </div>
           ) : (
             <button onClick={() => { setIsMenuOpen(false); onLoginClick(); }} className="w-full py-4 bg-[#F5EBE1] text-[#4A3224] rounded-full action-label text-xs uppercase hover:scale-[1.02] transition-all">LOGIN</button>

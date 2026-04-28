@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
+import ConfirmationModal from '../components/ConfirmationModal'
 
 const HAZARD_LABELS = [
   ['ground_rupture', 'Ground Rupture'],
@@ -31,6 +32,13 @@ export default function RiskAssessmentRecords() {
   const [editingRecordId, setEditingRecordId] = useState(null)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [initialFormData, setInitialFormData] = useState(null)
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  })
   const [formData, setFormData] = useState({
     assessed_at: '',
     hazard_snapshot: {
@@ -117,8 +125,7 @@ export default function RiskAssessmentRecords() {
 
   const openEditModal = (record) => {
     if (!isEditable) return
-    setEditingRecordId(record.id)
-    setFormData({
+    const initialData = {
       assessed_at: new Date(record.assessed_at).toISOString().slice(0, 16),
       hazard_snapshot: {
         ground_rupture: record.hazard_snapshot?.ground_rupture || 'Unavailable',
@@ -130,12 +137,41 @@ export default function RiskAssessmentRecords() {
         landslide: record.hazard_snapshot?.landslide || 'Unavailable',
         storm_surge: record.hazard_snapshot?.storm_surge || 'Unavailable',
       },
-    })
+    }
+
+    setEditingRecordId(record.id)
+    setInitialFormData(initialData)
+    setFormData(initialData)
     setIsModalOpen(true)
   }
 
-  const handleSaveEdit = async (e) => {
-    e.preventDefault()
+  const hasUnsavedChanges = useMemo(() => {
+    if (!isModalOpen || !initialFormData) return false
+    return JSON.stringify(formData) !== JSON.stringify(initialFormData)
+  }, [formData, initialFormData, isModalOpen])
+
+  const closeEditorModal = () => {
+    setIsModalOpen(false)
+    setEditingRecordId(null)
+    setInitialFormData(null)
+  }
+
+  const isFieldChanged = (fieldName) => {
+    if (!editingRecordId || !initialFormData) return false
+
+    if (fieldName === 'assessed_at') {
+      return formData.assessed_at !== initialFormData.assessed_at
+    }
+
+    return formData.hazard_snapshot?.[fieldName] !== initialFormData.hazard_snapshot?.[fieldName]
+  }
+
+  const getFieldClassName = (fieldName, baseClassName) => {
+    const changed = isFieldChanged(fieldName)
+    return `${baseClassName} ${changed ? 'border-amber-300 bg-amber-50 ring-2 ring-amber-200 shadow-[0_0_0_1px_rgba(245,158,11,0.12)]' : ''}`
+  }
+
+  const handleSaveEdit = async () => {
     if (!isEditable || !editingRecordId) return
     setSaving(true)
 
@@ -165,16 +201,27 @@ export default function RiskAssessmentRecords() {
       return next
     })
 
-    setIsModalOpen(false)
-    setEditingRecordId(null)
+    closeEditorModal()
     setSaving(false)
+  }
+
+  const handleSaveRequest = (e) => {
+    e.preventDefault()
+    if (!isEditable || !editingRecordId || saving) return
+
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Confirm Save',
+      message: 'Save these assessment record changes?',
+      onConfirm: async () => {
+        setConfirmConfig((prev) => ({ ...prev, isOpen: false }))
+        await handleSaveEdit()
+      },
+    })
   }
 
   const handleDeleteRecord = async () => {
     if (!isEditable || !editingRecordId) return
-    const confirmed = window.confirm('Delete this assessment record? This cannot be undone.')
-    if (!confirmed) return
-
     setDeleting(true)
     const { error } = await supabase
       .from('tbl_workshop_risk_assessments')
@@ -188,16 +235,55 @@ export default function RiskAssessmentRecords() {
     }
 
     setRecords((prev) => prev.filter((record) => record.id !== editingRecordId))
-    setIsModalOpen(false)
-    setEditingRecordId(null)
+    closeEditorModal()
     setDeleting(false)
+  }
+
+  const handleDeleteRequest = () => {
+    if (!isEditable || !editingRecordId || deleting) return
+
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Confirm Delete',
+      message: 'Delete this assessment record? This action cannot be undone.',
+      onConfirm: async () => {
+        setConfirmConfig((prev) => ({ ...prev, isOpen: false }))
+        await handleDeleteRecord()
+      },
+    })
+  }
+
+  const handleCancelRequest = () => {
+    if (!hasUnsavedChanges) {
+      closeEditorModal()
+      return
+    }
+
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Discard Changes?',
+      message: 'You have unsaved assessment changes. Discard them?',
+      onConfirm: () => {
+        setConfirmConfig((prev) => ({ ...prev, isOpen: false }))
+        closeEditorModal()
+      },
+    })
   }
 
   return (
     <div className="min-h-screen bg-[#FDF8F5]">
+      <ConfirmationModal
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        type="confirm"
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setConfirmConfig((prev) => ({ ...prev, isOpen: false }))}
+      />
+
       <div className="bg-[#0A0A0A] px-6 md:px-8 py-10 md:py-12 border-b border-[#D17B57]/30">
         <div className="max-w-7xl mx-auto">
-          <Link to={`/workshops/${workshopId}`} className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-black/40 backdrop-blur-md text-[#FDF8F5] border border-white/10 text-[10px] font-black tracking-widest uppercase hover:bg-black/60 transition-all mb-6">
+          <Link to={`/workshops/${workshopId}`} replace className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-black/40 backdrop-blur-md text-[#FDF8F5] border border-white/10 text-[10px] font-black tracking-widest uppercase hover:bg-black/60 transition-all mb-6">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
             Back
           </Link>
@@ -210,7 +296,7 @@ export default function RiskAssessmentRecords() {
         <div className="mb-6 flex items-center justify-between gap-4">
           <p className="text-[10px] text-[#4A3224]/70 uppercase tracking-widest font-black">Public read-only archive</p>
           {isEditable && (
-            <Link to={`/admin/workshops/${workshopId}/risk-profile`} className="action-label text-[10px] px-5 py-3 rounded-full bg-[#D17B57] text-white hover:bg-[#b06445] hover:scale-[1.02] transition-all">
+            <Link to={`/admin/workshops/${workshopId}/risk-profile`} replace className="action-label text-[10px] px-5 py-3 rounded-full bg-[#D17B57] text-white hover:bg-[#b06445] hover:scale-[1.02] transition-all">
               Assess now
             </Link>
           )}
@@ -285,25 +371,31 @@ export default function RiskAssessmentRecords() {
           <div className="w-full max-w-3xl bg-white pandayan-curve border border-[#EAE0D5] shadow-2xl overflow-hidden">
             <div className="bg-[#0A0A0A] px-6 py-4 flex items-center justify-between">
               <h3 className="action-label text-[10px] text-white">Edit Assessment Record</h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-white/80 hover:text-white">✕</button>
+              <button onClick={handleCancelRequest} className="text-white/80 hover:text-white">✕</button>
             </div>
 
-            <form onSubmit={handleSaveEdit} className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
+            <form onSubmit={handleSaveRequest} className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
               <div>
-                <label className="block text-[10px] uppercase tracking-widest text-gray-500 font-black mb-2">Assessment Date & Time</label>
+                <label className="block text-[10px] uppercase tracking-widest text-gray-500 font-black mb-2 flex items-center gap-2">
+                  Assessment Date & Time
+                  {isFieldChanged('assessed_at') && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-black text-amber-700">Edited</span>}
+                </label>
                 <input
                   type="datetime-local"
                   required
                   value={formData.assessed_at}
                   onChange={(e) => setFormData((prev) => ({ ...prev, assessed_at: e.target.value }))}
-                  className="w-full border border-[#EAE0D5] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#D17B57]/30"
+                  className={getFieldClassName('assessed_at', 'w-full border border-[#EAE0D5] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#D17B57]/30')}
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {HAZARD_LABELS.map(([key, label]) => (
                   <div key={key}>
-                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 font-black mb-2">{label}</label>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-500 font-black mb-2 flex items-center gap-2">
+                      {label}
+                      {isFieldChanged(key) && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-black text-amber-700">Edited</span>}
+                    </label>
                     <select
                       value={formData.hazard_snapshot[key]}
                       onChange={(e) =>
@@ -312,7 +404,7 @@ export default function RiskAssessmentRecords() {
                           hazard_snapshot: { ...prev.hazard_snapshot, [key]: e.target.value },
                         }))
                       }
-                      className="w-full border border-[#EAE0D5] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#D17B57]/30"
+                      className={getFieldClassName(key, 'w-full border border-[#EAE0D5] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#D17B57]/30')}
                     >
                       <option value="Unavailable">Unavailable</option>
                       <option value="Safe">Safe</option>
@@ -330,14 +422,14 @@ export default function RiskAssessmentRecords() {
                 <button
                   type="button"
                   disabled={deleting}
-                  onClick={handleDeleteRecord}
+                  onClick={handleDeleteRequest}
                   className="action-label text-[10px] px-5 py-3 rounded-full border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50"
                 >
                   {deleting ? 'Deleting...' : 'Delete Record'}
                 </button>
 
                 <div className="flex items-center gap-3">
-                  <button type="button" onClick={() => setIsModalOpen(false)} className="action-label text-[10px] px-5 py-3 rounded-full border border-[#EAE0D5] text-[#4A3224] hover:bg-[#FDF8F5]">
+                  <button type="button" onClick={handleCancelRequest} className="action-label text-[10px] px-5 py-3 rounded-full border border-[#EAE0D5] text-[#4A3224] hover:bg-[#FDF8F5]">
                     Cancel
                   </button>
                   <button type="submit" disabled={saving} className="action-label text-[10px] px-5 py-3 rounded-full bg-[#D17B57] text-white hover:bg-[#b06445] disabled:opacity-50">

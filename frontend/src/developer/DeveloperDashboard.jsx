@@ -1,12 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import ConfirmationModal from '../components/ConfirmationModal';
 
 export default function DeveloperDashboard() {
   const [pendingLGU, setPendingLGU] = useState([]);
   const [approvedLGU, setApprovedLGU] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
+  const [modalConfig, setModalConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -88,11 +95,41 @@ export default function DeveloperDashboard() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    setModalConfig(prev => ({ ...prev, isOpen: false }));
     navigate('/');
+  };
+
+  const confirmLogout = () => {
+    setModalConfig({
+      isOpen: true,
+      title: 'Confirm Logout',
+      message: 'Are you sure you want to sign out of your account?',
+      onConfirm: handleLogout,
+    });
+  };
+
+  const confirmStatusChange = (id, action, nextStatus) => {
+    setModalConfig({
+      isOpen: true,
+      title: 'Confirm Action',
+      message: `Are you sure you want to ${action} this LGU admin account?`,
+      onConfirm: async () => {
+        setModalConfig(prev => ({ ...prev, isOpen: false }));
+        await (nextStatus === 'approved' ? approveLGU(id) : revokeLGU(id));
+      },
+    });
   };
 
   return (
     <div className="min-h-screen bg-[#FDF8F5] font-sans">
+      <ConfirmationModal
+        isOpen={modalConfig.isOpen}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        type="confirm"
+        onConfirm={modalConfig.onConfirm}
+        onCancel={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
+      />
       
       {/* UNIVERSAL NAVIGATION BAR */}
       <nav className="fixed top-0 w-full z-[100] bg-white/70 backdrop-blur-sm border-b border-white/20 px-6 md:px-12 py-4 flex justify-between items-center transition-all duration-300 shadow-sm">
@@ -110,7 +147,7 @@ export default function DeveloperDashboard() {
             </Link>
             
             <div className="flex items-center gap-3 pl-4 border-l border-gray-300">
-                <button onClick={handleLogout} className="text-gray-400 hover:text-red-500 transition-colors flex items-center gap-2" title="Logout">
+                <button onClick={confirmLogout} className="text-gray-400 hover:text-red-500 transition-colors flex items-center gap-2" title="Logout">
                     <span className="text-[10px] font-black tracking-widest uppercase hidden sm:inline">Logout</span>
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                 </button>
@@ -165,7 +202,7 @@ export default function DeveloperDashboard() {
                       <td className="px-6 py-5 text-xs text-gray-400">{new Date(lgu.created_at).toLocaleDateString()}</td>
                       <td className="px-6 py-5">
                         <button
-                          onClick={() => approveLGU(lgu.id)}
+                          onClick={() => confirmStatusChange(lgu.id, 'approve', 'approved')}
                           disabled={updatingId === lgu.id}
                           className="px-4 py-2 bg-[#D17B57] text-white rounded-lg text-[10px] font-black uppercase tracking-widest shadow-md hover:bg-[#4A3224] transition-colors disabled:opacity-50"
                         >
@@ -215,7 +252,7 @@ export default function DeveloperDashboard() {
                       </td>
                       <td className="px-6 py-5">
                         <button
-                          onClick={() => revokeLGU(lgu.id)}
+                          onClick={() => confirmStatusChange(lgu.id, 'revoke', 'pending_approval')}
                           disabled={updatingId === lgu.id}
                           className="px-4 py-2 border border-red-200 text-red-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-red-50 transition-colors disabled:opacity-50"
                         >

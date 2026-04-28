@@ -326,6 +326,7 @@ export default function WorkshopPublicPage() {
                 <Link
                   key={product.id}
                   to={`/collection/${product.id}`}
+                  state={{ fromWorkshopId: workshop.id }}
                   className="group flex flex-col bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-[#EAE0D5] transition-all duration-300 hover:-translate-y-1"
                 >
                   <div className="aspect-square bg-[#1A1A1A] overflow-hidden relative">

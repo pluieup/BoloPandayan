@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { supabase } from '../supabaseClient'
+import ConfirmationModal from '../components/ConfirmationModal'
 
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -30,6 +31,7 @@ export default function RiskProfile() {
   const [copiedLng, setCopiedLng] = useState(false)
   const [userRole, setUserRole] = useState(null)
   const [assessmentHistory, setAssessmentHistory] = useState([])
+  const [isCompleteConfirmOpen, setIsCompleteConfirmOpen] = useState(false)
   
   const [position, setPosition] = useState(null)
   
@@ -297,9 +299,21 @@ export default function RiskProfile() {
 
   return (
     <div className="min-h-screen bg-[#FDF8F5] pb-20 reveal-up">
+      <ConfirmationModal
+        isOpen={isCompleteConfirmOpen}
+        title="Confirm Completion"
+        message="Complete and save this assessment now?"
+        type="confirm"
+        onConfirm={async () => {
+          setIsCompleteConfirmOpen(false)
+          await handleSaveProfile()
+        }}
+        onCancel={() => setIsCompleteConfirmOpen(false)}
+      />
+
       <div className="bg-[#121212] px-6 md:px-8 py-10 md:py-12 border-b border-[#D17B57]/30">
         <div className="max-w-7xl mx-auto">
-          <Link to={`/workshops/${workshopId}`} className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-black/40 backdrop-blur-md text-[#FDF8F5] border border-white/10 text-[10px] font-black tracking-widest uppercase hover:bg-black/60 transition-all">
+          <Link to={`/workshops/${workshopId}`} replace className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-black/40 backdrop-blur-md text-[#FDF8F5] border border-white/10 text-[10px] font-black tracking-widest uppercase hover:bg-black/60 transition-all">
             <svg className="w-4 h-" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
             Return
           </Link>
@@ -406,6 +420,7 @@ export default function RiskProfile() {
               )}
               <Link
                 to={`/workshops/${workshopId}/risk-assessments`}
+                replace
                 className="mt-4 inline-flex items-center gap-2 action-label text-[10px] text-[#D17B57] hover:text-[#b06445] transition-colors"
               >
                 View Full Assessment Records
@@ -559,7 +574,7 @@ export default function RiskProfile() {
                    <p className="mb-4 text-[10px]  tracking-widest uppercase text-red-300">{saveError}</p>
                  )}
                  <button 
-                  onClick={handleSaveProfile}
+                  onClick={() => setIsCompleteConfirmOpen(true)}
                   disabled={saving}
                   className="action-label w-75 bg-[#D17B57] text-white md:py-5 rounded-full text-[10px] hover:bg-[#b06445] hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                 >

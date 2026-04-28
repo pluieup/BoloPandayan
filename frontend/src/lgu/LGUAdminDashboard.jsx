@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import ConfirmationModal from './ConfirmationModal';
+import ConfirmationModal from '../components/ConfirmationModal';
 import ArtisanDirectoryTable from './ArtisanDirectoryTable';
 
 const LGUAdminDashboard = () => {
@@ -9,6 +9,7 @@ const LGUAdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
   const [loadError, setLoadError] = useState('');
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   
   // Modal State
   const [modalConfig, setModalConfig] = useState({
@@ -49,6 +50,7 @@ const LGUAdminDashboard = () => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    setIsLogoutConfirmOpen(false);
     navigate('/');
   };
 
@@ -113,6 +115,13 @@ const LGUAdminDashboard = () => {
   
   return (
     <div className="min-h-screen bg-[#FDF8F5] font-sans">
+      <ConfirmationModal
+        isOpen={isLogoutConfirmOpen}
+        title="Confirm Logout"
+        message="Are you sure you want to sign out of your account?"
+        onConfirm={handleLogout}
+        onCancel={() => setIsLogoutConfirmOpen(false)}
+      />
       
       <ConfirmationModal 
         isOpen={modalConfig.isOpen}
@@ -140,7 +149,7 @@ const LGUAdminDashboard = () => {
             </Link>
             
             <div className="flex items-center gap-3 pl-4 border-l border-gray-300">
-                <button onClick={handleLogout} className="text-gray-400 hover:text-red-500 transition-colors flex items-center gap-2" title="Logout">
+                <button onClick={() => setIsLogoutConfirmOpen(true)} className="text-gray-400 hover:text-red-500 transition-colors flex items-center gap-2" title="Logout">
                     <span className="text-[10px] font-black tracking-widest uppercase hidden sm:inline">Logout</span>
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                 </button>

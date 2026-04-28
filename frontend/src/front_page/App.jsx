@@ -5,6 +5,7 @@ import StatsBar from '../components/StatsBar'
 import AnimatedBackground from '../components/AnimatedBackground'
 import Navbar from './NavBar'
 import Hero from './Hero'
+import HeritageIntro from './HeritageIntro'
 import WorkshopList from './WorkShopList'
 import CollectionGallery from './CollectionGallery'
 import LoginModal from '../components/LoginModal'
@@ -66,6 +67,9 @@ function Home({ onLoginOpen }) {
       <div className="relative z-10">
         <div className="scroll-reveal is-visible" data-scroll-reveal>
           <Hero isDarkMode={isDarkMode} />
+        </div>
+        <div className="scroll-reveal" style={{ '--reveal-delay': '20ms' }} data-scroll-reveal>
+          <HeritageIntro isDarkMode={isDarkMode} />
         </div>
         <div className="scroll-reveal" style={{ '--reveal-delay': '40ms' }} data-scroll-reveal>
           <StatsBar isDarkMode={isDarkMode} />

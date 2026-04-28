@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { useNavigate, Link } from 'react-router-dom'
+import ConfirmationModal from '../components/ConfirmationModal'
 import UploadBoloModal from '../components/UploadBoloModal'
 import ProductCard from './ProductCard'
 import EditProfileModal from './EditProfileModal'
@@ -18,6 +19,7 @@ export default function ArtisanDashboard() {
   const [editingProduct, setEditingProduct] = useState(null)
   const [myProducts, setMyProducts] = useState([])
   const [myWorkshop, setMyWorkshop] = useState(null)
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false)
 
   const fetchProfile = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -92,6 +94,7 @@ export default function ArtisanDashboard() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
+    setIsLogoutConfirmOpen(false)
     navigate('/')
   }
 
@@ -123,7 +126,7 @@ export default function ArtisanDashboard() {
               ? 'Your pandayan setup has been submitted. Please wait while the LGU Admin reviews your profile and workshop application.'
               : 'The LGU Admin is currently reviewing your profile and workshop application. You will be notified once you are approved to publish products.'}
           </p>
-          <button onClick={handleLogout} className="mt-8 text-[10px] font-black text-[#D17B57] uppercase tracking-widest hover:underline">Sign Out</button>
+          <button onClick={() => setIsLogoutConfirmOpen(true)} className="mt-8 text-[10px] font-black text-[#D17B57] uppercase tracking-widest hover:underline">Sign Out</button>
         </div>
       </div>
     )
@@ -131,7 +134,14 @@ export default function ArtisanDashboard() {
 
   return (
     <div className="min-h-screen bg-[#FDF8F5] font-sans">
-      
+      <ConfirmationModal
+        isOpen={isLogoutConfirmOpen}
+        title="Confirm Logout"
+        message="Are you sure you want to sign out of your account?"
+        onConfirm={handleLogout}
+        onCancel={() => setIsLogoutConfirmOpen(false)}
+      />
+
       <nav className="fixed top-0 w-full z-[100] bg-white/70 backdrop-blur-sm border-b border-white/20 px-6 md:px-12 py-4 flex justify-between items-center transition-all duration-300 shadow-sm">
         <div className="flex items-center gap-4">
             <h1 className="text-xl font-black font-serif tracking-[0.2em] text-[#4A3224] uppercase hidden sm:block">Bolo Pandayan</h1>
@@ -154,7 +164,7 @@ export default function ArtisanDashboard() {
                         profile?.full_name?.charAt(0) || 'A'
                     )}
                 </button>
-                <button onClick={handleLogout} className="text-gray-400 hover:text-red-500 transition-colors" title="Logout">
+                <button onClick={() => setIsLogoutConfirmOpen(true)} className="text-gray-400 hover:text-red-500 transition-colors" title="Logout">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                 </button>
             </div>

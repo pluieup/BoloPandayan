@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
+import ConfirmationModal from '../components/ConfirmationModal'
 
 export default function DamageReports() {
   const { workshopId } = useParams()
@@ -15,6 +16,13 @@ export default function DamageReports() {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingId, setEditingId] = useState(null)
+  const [initialFormData, setInitialFormData] = useState(null)
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  })
   const [formData, setFormData] = useState({
     incident_date: '',
     disaster_type: 'Typhoon',
@@ -82,29 +90,53 @@ export default function DamageReports() {
   const openModal = (report = null) => {
     if (!isEditable) return
     if (report) {
-      setEditingId(report.id)
-      setFormData({
+      const initialData = {
         incident_date: report.incident_date,
         disaster_type: report.disaster_type,
         description: report.description,
         estimated_cost: report.estimated_cost,
         admin_notes: report.admin_notes || ''
-      })
+      }
+      setEditingId(report.id)
+      setInitialFormData(initialData)
+      setFormData(initialData)
     } else {
-      setEditingId(null)
-      setFormData({
+      const initialData = {
         incident_date: new Date().toISOString().split('T')[0],
         disaster_type: 'Typhoon',
         description: '',
         estimated_cost: '',
         admin_notes: ''
-      })
+      }
+      setEditingId(null)
+      setInitialFormData(initialData)
+      setFormData(initialData)
     }
     setIsModalOpen(true)
   }
 
-  const handleSave = async (e) => {
-    e.preventDefault()
+  const hasUnsavedChanges = useMemo(() => {
+    if (!isModalOpen || !initialFormData) return false
+    return JSON.stringify(formData) !== JSON.stringify(initialFormData)
+  }, [formData, initialFormData, isModalOpen])
+
+  const closeEditorModal = () => {
+    setIsModalOpen(false)
+    setEditingId(null)
+    setInitialFormData(null)
+  }
+
+  const isFieldChanged = (fieldName) => {
+    if (!editingId || !initialFormData) return false
+    return formData[fieldName] !== initialFormData[fieldName]
+  }
+
+  const getFieldClassName = (fieldName, baseClassName) => {
+    const changed = isFieldChanged(fieldName)
+    return `${baseClassName} ${changed ? 'border-amber-300 bg-amber-50 ring-2 ring-amber-200 shadow-[0_0_0_1px_rgba(245,158,11,0.12)]' : ''}`
+  }
+
+  const handleSave = async () => {
     if (!isEditable) return
     
     const payload = {
@@ -124,26 +156,81 @@ export default function DamageReports() {
       await supabase.from('tbl_damage_reports').insert([payload])
     }
 
-    setIsModalOpen(false)
+    closeEditorModal()
     fetchData()
+  }
+
+  const handleSaveRequest = (e) => {
+    e.preventDefault()
+    if (!isEditable) return
+
+    const isEditing = !!editingId
+    setConfirmConfig({
+      isOpen: true,
+      title: isEditing ? 'Confirm Save' : 'Confirm Filing',
+      message: isEditing
+        ? 'Save these changes to the disaster report?'
+        : 'File this new disaster report?',
+      onConfirm: async () => {
+        setConfirmConfig((prev) => ({ ...prev, isOpen: false }))
+        await handleSave()
+      },
+    })
   }
 
   const handleDelete = async () => {
     if (!isEditable) return
-    const confirmed = window.confirm("Are you sure you want to delete this damage report? This action cannot be undone.")
-    if (!confirmed) return
-
     await supabase.from('tbl_damage_reports').delete().eq('id', editingId)
-    setIsModalOpen(false)
+    closeEditorModal()
     fetchData()
+  }
+
+  const handleDeleteRequest = () => {
+    if (!isEditable || !editingId) return
+
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Confirm Delete',
+      message: 'Delete this disaster record report? This action cannot be undone.',
+      onConfirm: async () => {
+        setConfirmConfig((prev) => ({ ...prev, isOpen: false }))
+        await handleDelete()
+      },
+    })
+  }
+
+  const handleCancelRequest = () => {
+    if (!hasUnsavedChanges) {
+      closeEditorModal()
+      return
+    }
+
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Discard Changes?',
+      message: 'You have unsaved disaster record changes. Discard them?',
+      onConfirm: () => {
+        setConfirmConfig((prev) => ({ ...prev, isOpen: false }))
+        closeEditorModal()
+      },
+    })
   }
 
   return (
     <div className="min-h-screen bg-[#FDF8F5]">
+      <ConfirmationModal
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        type="confirm"
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setConfirmConfig((prev) => ({ ...prev, isOpen: false }))}
+      />
+
       {/* Header */}
       <div className="bg-[#121212] px-8 py-12 border-b border-[#D17B57]/30">
         <div className="max-w-6xl mx-auto">
-          <Link to={`/workshops/${workshopId}`} className="text-[#D17B57] text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors mb-6 inline-block">
+          <Link to={`/workshops/${workshopId}`} replace className="text-[#D17B57] text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors mb-6 inline-block">
             ← Return to Workshop Page
           </Link>
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -266,23 +353,29 @@ export default function DamageReports() {
               <h3 className="text-white font-black uppercase tracking-widest text-sm">
                 {editingId ? 'Edit Damage Record' : 'File New Damage Record'}
               </h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-[#D17B57] transition-colors">
+              <button onClick={handleCancelRequest} className="text-gray-400 hover:text-[#D17B57] transition-colors">
                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
               </button>
             </div>
             
-            <form onSubmit={handleSave} className="flex flex-col overflow-hidden">
+            <form onSubmit={handleSaveRequest} className="flex flex-col overflow-hidden">
               
               {/* Scrollable Form Body */}
               <div className="p-8 space-y-6 overflow-y-auto max-h-[60vh]">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Date of Incident</label>
-                    <input type="date" required value={formData.incident_date} onChange={e => setFormData({...formData, incident_date: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#D17B57] focus:ring-1 focus:ring-[#D17B57]/20 transition-all" />
+                    <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                      Date of Incident
+                      {isFieldChanged('incident_date') && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-black text-amber-700">Edited</span>}
+                    </label>
+                    <input type="date" required value={formData.incident_date} onChange={e => setFormData({...formData, incident_date: e.target.value})} className={getFieldClassName('incident_date', 'w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#D17B57] focus:ring-1 focus:ring-[#D17B57]/20 transition-all')} />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Disaster Type</label>
-                    <select value={formData.disaster_type} onChange={e => setFormData({...formData, disaster_type: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#D17B57] focus:ring-1 focus:ring-[#D17B57]/20 transition-all">
+                    <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                      Disaster Type
+                      {isFieldChanged('disaster_type') && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-black text-amber-700">Edited</span>}
+                    </label>
+                    <select value={formData.disaster_type} onChange={e => setFormData({...formData, disaster_type: e.target.value})} className={getFieldClassName('disaster_type', 'w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#D17B57] focus:ring-1 focus:ring-[#D17B57]/20 transition-all')}>
                       <option>Typhoon</option>
                       <option>Flood</option>
                       <option>Landslide</option>
@@ -293,21 +386,30 @@ export default function DamageReports() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Detailed Description of Damage</label>
-                  <textarea required rows="4" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} placeholder="e.g., Roof collapsed over the forge area, ruining two anvils..." className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#D17B57] focus:ring-1 focus:ring-[#D17B57]/20 transition-all"></textarea>
+                  <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                    Detailed Description of Damage
+                    {isFieldChanged('description') && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-black text-amber-700">Edited</span>}
+                  </label>
+                  <textarea required rows="4" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} placeholder="e.g., Roof collapsed over the forge area, ruining two anvils..." className={getFieldClassName('description', 'w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#D17B57] focus:ring-1 focus:ring-[#D17B57]/20 transition-all')}></textarea>
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Estimated Cost to Fix (PHP)</label>
+                  <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                    Estimated Cost to Fix (PHP)
+                    {isFieldChanged('estimated_cost') && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-black text-amber-700">Edited</span>}
+                  </label>
                   <div className="relative">
                      <span className="absolute left-4 top-3 text-gray-400 font-bold">₱</span>
-                     <input type="number" required value={formData.estimated_cost} onChange={e => setFormData({...formData, estimated_cost: e.target.value})} placeholder="50000" className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-8 pr-4 py-3 text-sm focus:outline-none focus:border-[#D17B57] focus:ring-1 focus:ring-[#D17B57]/20 transition-all" />
+                     <input type="number" required value={formData.estimated_cost} onChange={e => setFormData({...formData, estimated_cost: e.target.value})} placeholder="50000" className={getFieldClassName('estimated_cost', 'w-full bg-gray-50 border border-gray-200 rounded-xl pl-8 pr-4 py-3 text-sm focus:outline-none focus:border-[#D17B57] focus:ring-1 focus:ring-[#D17B57]/20 transition-all')} />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Admin Notes (Internal Use Only)</label>
-                  <textarea rows="2" value={formData.admin_notes} onChange={e => setFormData({...formData, admin_notes: e.target.value})} placeholder="Funding request sent to DOST..." className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#D17B57] focus:ring-1 focus:ring-[#D17B57]/20 transition-all"></textarea>
+                  <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                    Admin Notes (Internal Use Only)
+                    {isFieldChanged('admin_notes') && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-black text-amber-700">Edited</span>}
+                  </label>
+                  <textarea rows="2" value={formData.admin_notes} onChange={e => setFormData({...formData, admin_notes: e.target.value})} placeholder="Funding request sent to DOST..." className={getFieldClassName('admin_notes', 'w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#D17B57] focus:ring-1 focus:ring-[#D17B57]/20 transition-all')}></textarea>
                 </div>
               </div>
 
@@ -315,14 +417,14 @@ export default function DamageReports() {
               <div className="px-8 py-5 bg-gray-50 border-t border-[#EAE0D5] flex justify-between items-center shrink-0">
                 <div>
                   {editingId && (
-                    <button type="button" onClick={handleDelete} className="px-4 py-3 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors">
+                    <button type="button" onClick={handleDeleteRequest} className="px-4 py-3 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors">
                       Delete Record
                     </button>
                   )}
                 </div>
                 
                 <div className="flex gap-4">
-                  <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-3 bg-white border border-gray-200 text-gray-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-100 transition-colors">Cancel</button>
+                  <button type="button" onClick={handleCancelRequest} className="px-6 py-3 bg-white border border-gray-200 text-gray-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-100 transition-colors">Cancel</button>
                   <button type="submit" className="px-6 py-3 bg-[#1A2E35] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#111e22] transition-colors shadow-lg">Save Record</button>
                 </div>
               </div>
