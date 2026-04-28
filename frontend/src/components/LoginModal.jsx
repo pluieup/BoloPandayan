@@ -40,7 +40,7 @@ export default function LoginModal({ isOpen, onClose }) {
 
       const { data: profile, error: profileError } = await supabase
         .from('tbl_user_profiles')
-        .select('account_status, is_approved, role')
+        .select('account_status, is_approved, role, status_feedback')
         .eq('id', authData.user.id)
         .limit(1)
         .maybeSingle();
@@ -51,6 +51,16 @@ export default function LoginModal({ isOpen, onClose }) {
       const isLGUPending =
         profile.role === 'lgu_admin' &&
         (profile.is_approved !== true || profile.account_status !== 'approved')
+
+      const normalizedStatus = (profile.account_status || '').toLowerCase()
+      const isRejectedOrRevoked = normalizedStatus === 'rejected' || normalizedStatus === 'revoked'
+      const feedbackMessage = profile.status_feedback?.trim() || 'No feedback was provided.'
+      const reapplyPrompt = 'Please create a new account again with the full requirements.'
+
+      if (isRejectedOrRevoked) {
+        await supabase.auth.signOut()
+        throw new Error(`Your account was ${normalizedStatus}. Feedback: ${feedbackMessage} ${reapplyPrompt}`)
+      }
 
       if (isLGUPending) {
         await supabase.auth.signOut()

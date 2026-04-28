@@ -9,13 +9,13 @@ export default function CollectionItemPage() {
   const [product, setProduct] = useState(null)
   const [workshop, setWorkshop] = useState(null)
   const [artisan, setArtisan] = useState(null)
+  const fromWorkshopId = location.state?.fromWorkshopId
 
   const backTarget = useMemo(() => {
-    const stateWorkshopId = location.state?.fromWorkshopId
-    const resolvedWorkshopId = stateWorkshopId || workshop?.id || product?.workshop_id
+    return fromWorkshopId ? `/workshops/${fromWorkshopId}` : '/#collection'
+  }, [fromWorkshopId])
 
-    return resolvedWorkshopId ? `/workshops/${resolvedWorkshopId}` : '/'
-  }, [location.state, workshop, product])
+  const backLabel = fromWorkshopId ? 'Back to Workshop' : 'Back to Collection'
 
   useEffect(() => {
     const fetchItem = async () => {
@@ -80,7 +80,7 @@ export default function CollectionItemPage() {
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-6 sm:py-10 lg:py-12">
         <Link to={backTarget} replace className="inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-[#FDF8F5] border border-[#D17B57]/20 text-[#4A3224] text-[9px] sm:text-[10px] font-black tracking-widest uppercase hover:bg-[#D17B57] hover:text-white hover:scale-[1.02] transition-all mb-6 sm:mb-8 shadow-sm">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
-          Back to Workshop
+          {backLabel}
         </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 bg-white border border-[#EAE0D5] rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-10 shadow-sm items-start">

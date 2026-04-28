@@ -16,6 +16,7 @@ export default function ArtisanDirectoryTable({ artisans, updatingId, normalizeS
             const normalizedStatus = normalizeStatus(artisan.account_status)
             const isUpdating = updatingId === artisan.id
             const isReviewable = normalizedStatus === 'pending' || normalizedStatus === 'pending_approval'
+            const isClosed = normalizedStatus === 'rejected' || normalizedStatus === 'revoked'
 
             return (
               <tr key={artisan.id} className="hover:bg-gray-50/50 transition-colors">
@@ -68,7 +69,7 @@ export default function ArtisanDirectoryTable({ artisans, updatingId, normalizeS
                       </button>
                       <button
                         disabled={isUpdating}
-                        onClick={() => onStatusUpdate(artisan.id, 'pending')}
+                        onClick={() => onStatusUpdate(artisan.id, 'rejected')}
                         className="text-red-500 border border-red-100 text-[9px] font-black uppercase px-3 py-2 rounded-lg hover:bg-red-50 transition-all disabled:opacity-50"
                       >
                         {isUpdating ? 'Working...' : 'Reject'}
@@ -78,11 +79,16 @@ export default function ArtisanDirectoryTable({ artisans, updatingId, normalizeS
                   {normalizedStatus === 'approved' && (
                     <button
                       disabled={isUpdating}
-                      onClick={() => onStatusUpdate(artisan.id, 'pending')}
+                      onClick={() => onStatusUpdate(artisan.id, 'revoked')}
                       className="text-gray-400 text-[9px] font-bold uppercase hover:text-red-500 transition-all disabled:opacity-50"
                     >
                       {isUpdating ? 'Working...' : 'Revoke'}
                     </button>
+                  )}
+                  {isClosed && (
+                    <span className="inline-flex items-center px-3 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest text-gray-300 border border-dashed border-gray-200">
+                      Closed
+                    </span>
                   )}
                 </td>
               </tr>

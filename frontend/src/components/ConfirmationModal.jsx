@@ -1,4 +1,17 @@
-export default function ConfirmationModal({ isOpen, title, message, onConfirm, onCancel, type = 'confirm' }) {
+export default function ConfirmationModal({
+  isOpen,
+  title,
+  message,
+  onConfirm,
+  onCancel,
+  type = 'confirm',
+  inputLabel,
+  inputValue,
+  onInputChange,
+  inputPlaceholder,
+  confirmText,
+  confirmDisabled = false,
+}) {
   if (!isOpen) return null
 
   return (
@@ -24,6 +37,19 @@ export default function ConfirmationModal({ isOpen, title, message, onConfirm, o
           <p className="text-sm text-gray-500 mt-2">{message}</p>
         </div>
 
+        {onInputChange && (
+          <div className="mb-6 text-left">
+            {inputLabel && <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">{inputLabel}</label>}
+            <textarea
+              value={inputValue}
+              onChange={(e) => onInputChange(e.target.value)}
+              placeholder={inputPlaceholder}
+              rows={5}
+              className="w-full rounded-2xl border border-[#EAE0D5] bg-[#FDF8F5] px-4 py-3 text-sm text-[#4A3224] placeholder:text-gray-400 focus:outline-none focus:border-[#D17B57] focus:ring-1 focus:ring-[#D17B57]/20 resize-none"
+            />
+          </div>
+        )}
+
         <div className="flex gap-3 justify-center">
           {type === 'confirm' && (
             <button
@@ -34,14 +60,15 @@ export default function ConfirmationModal({ isOpen, title, message, onConfirm, o
             </button>
           )}
           <button
-            onClick={onConfirm}
+            onClick={() => onConfirm(inputValue)}
+            disabled={confirmDisabled}
             className={`px-6 py-2.5 rounded-xl text-xs font-bold text-white uppercase tracking-widest transition-colors ${
               title.toLowerCase().includes('success') ? 'bg-green-600 hover:bg-green-700' :
               title.toLowerCase().includes('error') || title.toLowerCase().includes('failed') ? 'bg-red-600 hover:bg-red-700' :
               'bg-[#D17B57] hover:bg-[#b06445]'
             }`}
           >
-            {type === 'alert' ? 'OK' : 'Confirm'}
+            {type === 'alert' ? 'OK' : (confirmText || 'Confirm')}
           </button>
         </div>
       </div>

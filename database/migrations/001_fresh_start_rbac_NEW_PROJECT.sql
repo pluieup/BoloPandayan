@@ -38,6 +38,7 @@ create table public.tbl_user_profiles (
     default 'pending' 
     check (account_status in ('pending', 'pending_approval', 'approved', 'Approved', 'rejected', 'revoked')),
   is_approved boolean default false,
+  status_feedback text,
   workshop_id uuid,
   region text,
   valid_id_url text,

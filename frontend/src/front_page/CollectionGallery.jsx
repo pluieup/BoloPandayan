@@ -10,10 +10,56 @@ export default function CollectionGallery({ isDarkMode }) {
     const fetchProducts = async () => {
       const { data, error } = await supabase
         .from('tbl_products')
-        .select('*')
+        .select('id, name, image_url, price, description, blade_material, handle_material, workshop_id, created_at')
         .order('created_at', { ascending: false })
 
-      if (!error) setProducts(data)
+      if (error) return
+
+      const productsData = data || []
+
+      // Batch fetch related workshops and artisan (owner) profiles to enrich cards
+      const workshopIds = [...new Set(productsData.map((p) => p.workshop_id).filter(Boolean))]
+      let workshopsMap = {}
+
+      if (workshopIds.length > 0) {
+        const { data: workshops } = await supabase
+          .from('tbl_workshops')
+          .select('id, name, owner_id')
+          .in('id', workshopIds)
+
+        if (workshops && workshops.length > 0) {
+          workshopsMap = workshops.reduce((acc, w) => {
+            acc[w.id] = w
+            return acc
+          }, {})
+
+          const ownerIds = [...new Set(workshops.map((w) => w.owner_id).filter(Boolean))]
+          if (ownerIds.length > 0) {
+            const { data: owners } = await supabase
+              .from('tbl_user_profiles')
+              .select('id, full_name, profile_photo_url')
+              .in('id', ownerIds)
+
+            const ownersMap = (owners || []).reduce((acc, o) => {
+              acc[o.id] = o
+              return acc
+            }, {})
+
+            // attach owner (artisan) to workshop entries
+            Object.values(workshopsMap).forEach((w) => {
+              w.owner = ownersMap[w.owner_id] || null
+            })
+          }
+        }
+      }
+
+      const enriched = productsData.map((p) => ({
+        ...p,
+        workshop: workshopsMap[p.workshop_id] || null,
+        artisan: (workshopsMap[p.workshop_id] && workshopsMap[p.workshop_id].owner) || null,
+      }))
+
+      setProducts(enriched)
     }
 
     fetchProducts()
@@ -85,6 +131,8 @@ export default function CollectionGallery({ isDarkMode }) {
             name={item.name}
             image={item.image_url}
             isDarkMode={isDarkMode}
+            workshop={item.workshop}
+            artisan={item.artisan}
           />
         ))}
       </div>

@@ -10,6 +10,7 @@ const LGUAdminDashboard = () => {
   const [updatingId, setUpdatingId] = useState(null);
   const [loadError, setLoadError] = useState('');
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+  const [statusFeedback, setStatusFeedback] = useState('');
   
   // Modal State
   const [modalConfig, setModalConfig] = useState({
@@ -18,6 +19,8 @@ const LGUAdminDashboard = () => {
     message: '',
     type: 'confirm', 
     onConfirm: () => {},
+    confirmText: 'Confirm',
+    confirmDisabled: false,
   });
 
   const navigate = useNavigate();
@@ -75,20 +78,41 @@ const LGUAdminDashboard = () => {
     });
   };
 
+  const handleFeedbackChange = (value) => {
+    setStatusFeedback(value);
+    setModalConfig(prev => ({
+      ...prev,
+      inputValue: value,
+      confirmDisabled: !value.trim(),
+    }));
+  };
+
   const handleStatusUpdate = async (id, newStatus) => {
     const actionLabel =
       newStatus === 'approved'
         ? 'approve'
-        : newStatus === 'pending'
-          ? 'set to pending'
-          : 'update';
+        : newStatus === 'rejected'
+          ? 'reject'
+          : newStatus === 'revoked'
+            ? 'revoke'
+            : 'update';
+
+    const requiresFeedback = newStatus === 'rejected' || newStatus === 'revoked';
 
     setModalConfig({
       isOpen: true,
-      title: 'Confirm Action',
-      message: `Are you sure you want to ${actionLabel} this artisan account?`,
+      title: requiresFeedback ? 'Add Feedback' : 'Confirm Action',
+      message: requiresFeedback
+        ? `Please explain why you are ${actionLabel === 'revoke' ? 'revoking' : 'rejecting'} this artisan account.`
+        : `Are you sure you want to ${actionLabel} this artisan account?`,
       type: 'confirm',
-      onConfirm: async () => {
+      confirmText: requiresFeedback ? 'Save Feedback' : 'Confirm',
+      confirmDisabled: requiresFeedback && !statusFeedback.trim(),
+      inputLabel: requiresFeedback ? 'Feedback message' : '',
+      inputValue: requiresFeedback ? statusFeedback : '',
+      inputPlaceholder: requiresFeedback ? 'Explain the reason for this decision...' : '',
+      onInputChange: requiresFeedback ? handleFeedbackChange : undefined,
+      onConfirm: async (feedbackMessage) => {
         setModalConfig(prev => ({ ...prev, isOpen: false }));
         setUpdatingId(id);
 
@@ -96,7 +120,9 @@ const LGUAdminDashboard = () => {
           .from('tbl_user_profiles')
           .update({
             account_status: newStatus,
-            is_approved: newStatus === 'approved'
+            is_approved: newStatus === 'approved',
+            status_feedback: requiresFeedback ? feedbackMessage.trim() : null,
+            updated_at: new Date().toISOString()
           })
           .eq('id', id);
 
@@ -107,6 +133,7 @@ const LGUAdminDashboard = () => {
         }
 
         showAlert('Success', `Account is now ${getStatusLabel(newStatus)}.`);
+        setStatusFeedback('');
         await fetchArtisans();
         setUpdatingId(null);
       }
@@ -128,6 +155,12 @@ const LGUAdminDashboard = () => {
         title={modalConfig.title}
         message={modalConfig.message}
         type={modalConfig.type}
+        confirmText={modalConfig.confirmText}
+        confirmDisabled={modalConfig.confirmDisabled}
+        inputLabel={modalConfig.inputLabel}
+        inputValue={modalConfig.inputValue}
+        inputPlaceholder={modalConfig.inputPlaceholder}
+        onInputChange={modalConfig.onInputChange}
         onConfirm={modalConfig.onConfirm}
         onCancel={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
       />

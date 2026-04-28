@@ -15,6 +15,11 @@ export default function ProtectedRoute({ user, profile, allowedRoles, children }
     return <Navigate to="/" replace />;
   }
 
+  const normalizedStatus = (profile.account_status || '').toLowerCase();
+  if (normalizedStatus === 'rejected' || normalizedStatus === 'revoked') {
+    return <Navigate to="/" replace />;
+  }
+
   // 4. LGU admins must be explicitly approved by a developer.
   if (
     profile.role === 'lgu_admin' &&

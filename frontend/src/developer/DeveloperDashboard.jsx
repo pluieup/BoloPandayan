@@ -8,11 +8,14 @@ export default function DeveloperDashboard() {
   const [approvedLGU, setApprovedLGU] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
+  const [statusFeedback, setStatusFeedback] = useState('');
   const [modalConfig, setModalConfig] = useState({
     isOpen: false,
     title: '',
     message: '',
     onConfirm: () => {},
+    confirmText: 'Confirm',
+    confirmDisabled: false,
   });
   const navigate = useNavigate();
 
@@ -26,7 +29,7 @@ export default function DeveloperDashboard() {
 
       const { data: pending, error: pendingError } = await supabase
         .from('tbl_user_profiles')
-        .select('id, full_name, account_status, created_at, updated_at')
+        .select('id, full_name, account_status, status_feedback, created_at, updated_at')
         .eq('role', 'lgu_admin')
         .eq('is_approved', false)
         .order('created_at', { ascending: false });
@@ -35,7 +38,7 @@ export default function DeveloperDashboard() {
 
       const { data: approved, error: approvedError } = await supabase
         .from('tbl_user_profiles')
-        .select('id, full_name, account_status, created_at, updated_at')
+        .select('id, full_name, account_status, status_feedback, created_at, updated_at')
         .eq('role', 'lgu_admin')
         .eq('is_approved', true)
         .order('created_at', { ascending: false });
@@ -72,14 +75,24 @@ export default function DeveloperDashboard() {
     }
   };
 
-  const revokeLGU = async (id) => {
+  const handleFeedbackChange = (value) => {
+    setStatusFeedback(value);
+    setModalConfig(prev => ({
+      ...prev,
+      inputValue: value,
+      confirmDisabled: !value.trim(),
+    }));
+  };
+
+  const updateLGUStatus = async (id, nextStatus, feedbackMessage = '') => {
     try {
       setUpdatingId(id);
       const { error } = await supabase
         .from('tbl_user_profiles')
         .update({
-          account_status: 'pending_approval',
+          account_status: nextStatus,
           is_approved: false,
+          status_feedback: feedbackMessage.trim(),
           updated_at: new Date().toISOString()
         })
         .eq('id', id);
@@ -87,7 +100,7 @@ export default function DeveloperDashboard() {
       if (error) throw error;
       await fetchLGUAdmins();
     } catch (err) {
-      alert(`Error revoking LGU: ${err.message}`);
+      alert(`Error updating LGU status: ${err.message}`);
     } finally {
       setUpdatingId(null);
     }
@@ -109,13 +122,27 @@ export default function DeveloperDashboard() {
   };
 
   const confirmStatusChange = (id, action, nextStatus) => {
+    const requiresFeedback = nextStatus === 'rejected' || nextStatus === 'revoked';
     setModalConfig({
       isOpen: true,
-      title: 'Confirm Action',
-      message: `Are you sure you want to ${action} this LGU admin account?`,
-      onConfirm: async () => {
+      title: requiresFeedback ? 'Add Feedback' : 'Confirm Action',
+      message: requiresFeedback
+        ? `Please explain why you are ${action === 'revoke' ? 'revoking' : 'rejecting'} this LGU admin account.`
+        : `Are you sure you want to ${action} this LGU admin account?`,
+      confirmText: requiresFeedback ? 'Save Feedback' : 'Confirm',
+      confirmDisabled: requiresFeedback && !statusFeedback.trim(),
+      inputLabel: requiresFeedback ? 'Feedback message' : '',
+      inputValue: requiresFeedback ? statusFeedback : '',
+      inputPlaceholder: requiresFeedback ? 'Explain the reason for this decision...' : '',
+      onInputChange: requiresFeedback ? handleFeedbackChange : undefined,
+      onConfirm: async (feedbackMessage) => {
         setModalConfig(prev => ({ ...prev, isOpen: false }));
-        await (nextStatus === 'approved' ? approveLGU(id) : revokeLGU(id));
+        if (nextStatus === 'approved') {
+          await approveLGU(id);
+        } else {
+          await updateLGUStatus(id, nextStatus, feedbackMessage);
+        }
+        setStatusFeedback('');
       },
     });
   };
@@ -127,6 +154,12 @@ export default function DeveloperDashboard() {
         title={modalConfig.title}
         message={modalConfig.message}
         type="confirm"
+        confirmText={modalConfig.confirmText}
+        confirmDisabled={modalConfig.confirmDisabled}
+        inputLabel={modalConfig.inputLabel}
+        inputValue={modalConfig.inputValue}
+        inputPlaceholder={modalConfig.inputPlaceholder}
+        onInputChange={modalConfig.onInputChange}
         onConfirm={modalConfig.onConfirm}
         onCancel={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
       />
@@ -208,6 +241,13 @@ export default function DeveloperDashboard() {
                         >
                           {updatingId === lgu.id ? 'Approving...' : 'Approve Access'}
                         </button>
+                        <button
+                          onClick={() => confirmStatusChange(lgu.id, 'reject', 'rejected')}
+                          disabled={updatingId === lgu.id}
+                          className="ml-2 px-4 py-2 border border-red-200 text-red-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-red-50 transition-colors disabled:opacity-50"
+                        >
+                          {updatingId === lgu.id ? 'Working...' : 'Reject'}
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -252,7 +292,7 @@ export default function DeveloperDashboard() {
                       </td>
                       <td className="px-6 py-5">
                         <button
-                          onClick={() => confirmStatusChange(lgu.id, 'revoke', 'pending_approval')}
+                          onClick={() => confirmStatusChange(lgu.id, 'revoke', 'revoked')}
                           disabled={updatingId === lgu.id}
                           className="px-4 py-2 border border-red-200 text-red-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-red-50 transition-colors disabled:opacity-50"
                         >
